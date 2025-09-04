@@ -8,7 +8,7 @@ A comprehensive API resilience management platform that provides real-time monit
 
 - **Real-time API Monitoring** - Live status tracking and health checks
 - **Circuit Breaker Implementation** - Automatic failure detection and recovery
-- **Failover Simulation** - Test your API resilience strategies  
+- **Failover Simulation** - Test your API resilience strategies
 - **Analytics Dashboard** - Performance metrics and insights
 - **Provider Management** - Configure and monitor multiple API providers
 - **Alert System** - Real-time notifications for system issues

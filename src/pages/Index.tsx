@@ -1,12 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Shield, 
-  Activity, 
-  Zap, 
-  BarChart3, 
-  Eye, 
+import {
+  Shield,
+  Activity,
+  Zap,
+  BarChart3,
+  Eye,
   CheckCircle2,
   ArrowRight,
   Github,
@@ -85,14 +85,14 @@ const Index = () => {
               <Star className="w-3 h-3 mr-1" />
               Enterprise-Grade API Resilience
             </Badge>
-            
+
             <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
               Bulletproof Your
               <span className="bg-gradient-cyber bg-clip-text text-transparent"> API Infrastructure</span>
             </h1>
-            
+
             <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-              Intelligent middleware platform that monitors, predicts, and automatically handles API failures 
+              Intelligent middleware platform that monitors, predicts, and automatically handles API failures
               across multiple providers. Never lose a transaction again.
             </p>
 
@@ -134,7 +134,7 @@ const Index = () => {
               Built for Mission-Critical Applications
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Comprehensive API resilience with intelligent monitoring, predictive analytics, 
+              Comprehensive API resilience with intelligent monitoring, predictive analytics,
               and automated failover systems.
             </p>
           </div>
@@ -167,7 +167,7 @@ const Index = () => {
             <p className="text-lg text-muted-foreground mb-8">
               Join hundreds of companies protecting their revenue with intelligent API resilience.
             </p>
-            
+
             <div className="flex items-center justify-center space-x-4">
               <Link to="/dashboard">
                 <Button variant="cyber" size="lg">
