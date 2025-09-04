@@ -1,503 +1,398 @@
 // Simulated API Providers for demonstration
 export interface ApiProvider {
-  id: string;
-  name: string;
-  type: "payment" | "sms" | "email" | "maps" | "ai" | "storage" | "auth" | "video" | "realtime" | "analytics" | "monitoring";
-  endpoint: string;
-  isHealthy: boolean;
-  latency: number;
-  errorRate: number;
-  priority: number;
-  isPrimary?: boolean;
-  lastCheck?: string;
+	id: string;
+	name: string;
+	type:
+		| 'payment'
+		| 'sms'
+		| 'email'
+		| 'maps'
+		| 'ai'
+		| 'storage'
+		| 'auth'
+		| 'video'
+		| 'realtime'
+		| 'analytics'
+		| 'monitoring';
+	endpoint: string;
+	isHealthy: boolean;
+	latency: number;
+	errorRate: number;
+	priority: number;
+	isPrimary?: boolean;
+	lastCheck?: string;
 }
 
 export interface ApiRequest {
-  id: string;
-  provider: string;
-  endpoint: string;
-  method: string;
-  timestamp: Date;
-  duration: number;
-  success: boolean;
-  errorCode?: string;
+	id: string;
+	provider: string;
+	endpoint: string;
+	method: string;
+	timestamp: Date;
+	duration: number;
+	success: boolean;
+	errorCode?: string;
 }
 
 export interface HealthCheck {
-  providerId: string;
-  timestamp: Date;
-  status: "healthy" | "degraded" | "down";
-  latency: number;
-  errorRate: number;
-  details?: string;
+	providerId: string;
+	timestamp: Date;
+	status: 'healthy' | 'degraded' | 'down';
+	latency: number;
+	errorRate: number;
+	details?: string;
 }
 
 // Simulated providers
 export const PROVIDERS: ApiProvider[] = [
-  // Payment Providers
-  {
-    id: "stripe",
-    name: "Stripe",
-    type: "payment",
-    endpoint: "https://api.stripe.com",
-    isHealthy: true,
-    latency: 125,
-    errorRate: 0.1,
-    priority: 1,
-    isPrimary: true,
-    lastCheck: "2 min ago"
-  },
-  {
-    id: "paypal", 
-    name: "PayPal",
-    type: "payment",
-    endpoint: "https://api.paypal.com",
-    isHealthy: false,
-    latency: 380,
-    errorRate: 2.1,
-    priority: 2,
-    lastCheck: "1 min ago"
-  },
-  {
-    id: "square",
-    name: "Square", 
-    type: "payment",
-    endpoint: "https://connect.squareup.com",
-    isHealthy: true,
-    latency: 210,
-    errorRate: 0.3,
-    priority: 3,
-    lastCheck: "3 min ago"
-  },
-  
-  // Communication Providers
-  {
-    id: "twilio",
-    name: "Twilio",
-    type: "sms", 
-    endpoint: "https://api.twilio.com",
-    isHealthy: false,
-    latency: 0,
-    errorRate: 100,
-    priority: 1,
-    isPrimary: true,
-    lastCheck: "15 min ago"
-  },
-  {
-    id: "vonage",
-    name: "Vonage",
-    type: "sms",
-    endpoint: "https://rest.nexmo.com", 
-    isHealthy: true,
-    latency: 180,
-    errorRate: 0.5,
-    priority: 2,
-    lastCheck: "5 min ago"
-  },
-  
-  // Email Providers
-  {
-    id: "sendgrid",
-    name: "SendGrid",
-    type: "email",
-    endpoint: "https://api.sendgrid.com",
-    isHealthy: true,
-    latency: 95,
-    errorRate: 0.2,
-    priority: 1,
-    lastCheck: "1 min ago"
-  },
-  {
-    id: "mailgun",
-    name: "Mailgun", 
-    type: "email",
-    endpoint: "https://api.mailgun.net",
-    isHealthy: true,
-    latency: 140,
-    errorRate: 0.4,
-    priority: 2,
-    lastCheck: "4 min ago"
-  },
-  {
-    id: "brevo",
-    name: "Brevo",
-    type: "email",
-    endpoint: "https://api.brevo.com",
-    isHealthy: true,
-    latency: 120,
-    errorRate: 0.3,
-    priority: 3,
-    lastCheck: "2 min ago"
-  },
-  
-  // Maps Providers
-  {
-    id: "google-maps",
-    name: "Google Maps",
-    type: "maps",
-    endpoint: "https://maps.googleapis.com",
-    isHealthy: true,
-    latency: 85,
-    errorRate: 0.1,
-    priority: 1,
-    lastCheck: "1 min ago"
-  },
-  
-  // AI Providers
-  {
-    id: "openai",
-    name: "OpenAI",
-    type: "ai",
-    endpoint: "https://api.openai.com",
-    isHealthy: true,
-    latency: 145,
-    errorRate: 0.2,
-    priority: 1,
-    isPrimary: true,
-    lastCheck: "30 sec ago"
-  },
-  {
-    id: "anthropic",
-    name: "Anthropic",
-    type: "ai",
-    endpoint: "https://api.anthropic.com",
-    isHealthy: true,
-    latency: 89,
-    errorRate: 0.1,
-    priority: 2,
-    lastCheck: "45 sec ago"
-  },
-  {
-    id: "google-ai",
-    name: "Google AI",
-    type: "ai",
-    endpoint: "https://generativelanguage.googleapis.com",
-    isHealthy: false,
-    latency: 210,
-    errorRate: 1.5,
-    priority: 3,
-    lastCheck: "8 min ago"
-  },
-  
-  // Storage Providers
-  {
-    id: "cloudinary",
-    name: "Cloudinary",
-    type: "storage",
-    endpoint: "https://api.cloudinary.com",
-    isHealthy: true,
-    latency: 95,
-    errorRate: 0.2,
-    priority: 1,
-    lastCheck: "2 min ago"
-  },
-  {
-    id: "uploadthing",
-    name: "UploadThing",
-    type: "storage",
-    endpoint: "https://uploadthing.com/api",
-    isHealthy: true,
-    latency: 110,
-    errorRate: 0.4,
-    priority: 2,
-    lastCheck: "3 min ago"
-  },
-  
-  // Auth Providers
-  {
-    id: "clerk",
-    name: "Clerk",
-    type: "auth",
-    endpoint: "https://api.clerk.com",
-    isHealthy: true,
-    latency: 75,
-    errorRate: 0.1,
-    priority: 1,
-    isPrimary: true,
-    lastCheck: "1 min ago"
-  },
-  {
-    id: "auth0",
-    name: "Auth0",
-    type: "auth",
-    endpoint: "https://api.auth0.com",
-    isHealthy: true,
-    latency: 120,
-    errorRate: 0.3,
-    priority: 2,
-    lastCheck: "4 min ago"
-  },
-  
-  // Video & Realtime Providers
-  {
-    id: "livekit",
-    name: "LiveKit",
-    type: "video",
-    endpoint: "https://api.livekit.io",
-    isHealthy: true,
-    latency: 65,
-    errorRate: 0.2,
-    priority: 1,
-    lastCheck: "2 min ago"
-  },
-  {
-    id: "liveblocks",
-    name: "Liveblocks",
-    type: "realtime",
-    endpoint: "https://api.liveblocks.io",
-    isHealthy: true,
-    latency: 55,
-    errorRate: 0.1,
-    priority: 1,
-    lastCheck: "1 min ago"
-  },
-  
-  // Analytics & Monitoring
-  {
-    id: "mixpanel",
-    name: "Mixpanel",
-    type: "analytics",
-    endpoint: "https://api.mixpanel.com",
-    isHealthy: true,
-    latency: 85,
-    errorRate: 0.2,
-    priority: 1,
-    lastCheck: "3 min ago"
-  },
-  {
-    id: "sentry",
-    name: "Sentry",
-    type: "monitoring",
-    endpoint: "https://sentry.io/api",
-    isHealthy: true,
-    latency: 70,
-    errorRate: 0.1,
-    priority: 1,
-    lastCheck: "1 min ago"
-  }
+	// Payment Providers
+	{
+		id: 'stripe',
+		name: 'Stripe',
+		type: 'payment',
+		endpoint: 'https://api.stripe.com',
+		isHealthy: true,
+		latency: 125,
+		errorRate: 0.1,
+		priority: 1,
+		isPrimary: true,
+		lastCheck: '2 min ago',
+	},
+	{
+		id: 'paypal',
+		name: 'PayPal',
+		type: 'payment',
+		endpoint: 'https://api.paypal.com',
+		isHealthy: false,
+		latency: 380,
+		errorRate: 2.1,
+		priority: 2,
+		lastCheck: '1 min ago',
+	},
+
+	// Communication Providers
+	{
+		id: 'twilio',
+		name: 'Twilio',
+		type: 'sms',
+		endpoint: 'https://api.twilio.com',
+		isHealthy: false,
+		latency: 0,
+		errorRate: 100,
+		priority: 1,
+		isPrimary: true,
+		lastCheck: '15 min ago',
+	},
+
+	// Email Providers
+	{
+		id: 'mailgun',
+		name: 'Mailgun',
+		type: 'email',
+		endpoint: 'https://api.mailgun.net',
+		isHealthy: true,
+		latency: 140,
+		errorRate: 0.4,
+		priority: 2,
+		lastCheck: '4 min ago',
+	},
+
+	// AI Providers
+	{
+		id: 'openai',
+		name: 'OpenAI',
+		type: 'ai',
+		endpoint: 'https://api.openai.com',
+		isHealthy: true,
+		latency: 145,
+		errorRate: 0.2,
+		priority: 1,
+		isPrimary: true,
+		lastCheck: '30 sec ago',
+	},
+	{
+		id: 'google-ai',
+		name: 'Google AI',
+		type: 'ai',
+		endpoint: 'https://generativelanguage.googleapis.com',
+		isHealthy: false,
+		latency: 210,
+		errorRate: 1.5,
+		priority: 3,
+		lastCheck: '8 min ago',
+	},
+
+	// Storage Providers
+	{
+		id: 'cloudinary',
+		name: 'Cloudinary',
+		type: 'storage',
+		endpoint: 'https://api.cloudinary.com',
+		isHealthy: true,
+		latency: 95,
+		errorRate: 0.2,
+		priority: 1,
+		lastCheck: '2 min ago',
+	},
+
+	// Auth Providers
+	{
+		id: 'clerk',
+		name: 'Clerk',
+		type: 'auth',
+		endpoint: 'https://api.clerk.com',
+		isHealthy: true,
+		latency: 75,
+		errorRate: 0.1,
+		priority: 1,
+		isPrimary: true,
+		lastCheck: '1 min ago',
+	},
 ];
 
 class ApiResilienceManager {
-  private providers: Map<string, ApiProvider> = new Map();
-  private circuitBreakers: Map<string, CircuitBreaker> = new Map();
-  private healthChecks: HealthCheck[] = [];
-  private requests: ApiRequest[] = [];
+	private providers: Map<string, ApiProvider> = new Map();
+	private circuitBreakers: Map<string, CircuitBreaker> = new Map();
+	private healthChecks: HealthCheck[] = [];
+	private requests: ApiRequest[] = [];
 
-  constructor() {
-    PROVIDERS.forEach(provider => {
-      this.providers.set(provider.id, provider);
-      this.circuitBreakers.set(provider.id, new CircuitBreaker(provider.id));
-    });
-  }
+	constructor() {
+		PROVIDERS.forEach((provider) => {
+			this.providers.set(provider.id, provider);
+			this.circuitBreakers.set(provider.id, new CircuitBreaker(provider.id));
+		});
+	}
 
-  async makeRequest(type: string, data: any): Promise<{ success: boolean; provider: string; data?: any; error?: string }> {
-    const availableProviders = this.getHealthyProviders(type);
-    
-    if (availableProviders.length === 0) {
-      throw new Error(`No healthy providers available for ${type}`);
-    }
+	async makeRequest(
+		type: string,
+		data: any
+	): Promise<{
+		success: boolean;
+		provider: string;
+		data?: any;
+		error?: string;
+	}> {
+		const availableProviders = this.getHealthyProviders(type);
 
-    // Try providers in priority order
-    for (const provider of availableProviders) {
-      const circuitBreaker = this.circuitBreakers.get(provider.id)!;
-      
-      if (!circuitBreaker.canExecute()) {
-        continue;
-      }
+		if (availableProviders.length === 0) {
+			throw new Error(`No healthy providers available for ${type}`);
+		}
 
-      try {
-        const result = await this.simulateApiCall(provider, data);
-        circuitBreaker.onSuccess();
-        
-        this.logRequest({
-          id: `req-${Date.now()}`,
-          provider: provider.name,
-          endpoint: provider.endpoint,
-          method: "POST",
-          timestamp: new Date(),
-          duration: result.duration,
-          success: true
-        });
+		// Try providers in priority order
+		for (const provider of availableProviders) {
+			const circuitBreaker = this.circuitBreakers.get(provider.id)!;
 
-        return {
-          success: true,
-          provider: provider.name,
-          data: result.data
-        };
-      } catch (error) {
-        circuitBreaker.onFailure();
-        
-        this.logRequest({
-          id: `req-${Date.now()}`,
-          provider: provider.name,
-          endpoint: provider.endpoint,
-          method: "POST", 
-          timestamp: new Date(),
-          duration: 0,
-          success: false,
-          errorCode: "TIMEOUT"
-        });
+			if (!circuitBreaker.canExecute()) {
+				continue;
+			}
 
-        // Continue to next provider
-        continue;
-      }
-    }
+			try {
+				const result = await this.simulateApiCall(provider, data);
+				circuitBreaker.onSuccess();
 
-    throw new Error("All providers failed");
-  }
+				this.logRequest({
+					id: `req-${Date.now()}`,
+					provider: provider.name,
+					endpoint: provider.endpoint,
+					method: 'POST',
+					timestamp: new Date(),
+					duration: result.duration,
+					success: true,
+				});
 
-  private async simulateApiCall(provider: ApiProvider, data: any): Promise<{ data: any; duration: number }> {
-    // Simulate network latency
-    await new Promise(resolve => setTimeout(resolve, provider.latency));
-    
-    // Simulate random failures based on error rate
-    if (Math.random() * 100 < provider.errorRate) {
-      throw new Error("API_ERROR");
-    }
+				return {
+					success: true,
+					provider: provider.name,
+					data: result.data,
+				};
+			} catch (error) {
+				circuitBreaker.onFailure();
 
-    return {
-      data: { ...data, processedBy: provider.name },
-      duration: provider.latency
-    };
-  }
+				this.logRequest({
+					id: `req-${Date.now()}`,
+					provider: provider.name,
+					endpoint: provider.endpoint,
+					method: 'POST',
+					timestamp: new Date(),
+					duration: 0,
+					success: false,
+					errorCode: 'TIMEOUT',
+				});
 
-  private getHealthyProviders(type: string): ApiProvider[] {
-    return Array.from(this.providers.values())
-      .filter(p => p.type === type)
-      .filter(p => this.circuitBreakers.get(p.id)?.canExecute())
-      .sort((a, b) => a.priority - b.priority);
-  }
+				// Continue to next provider
+				continue;
+			}
+		}
 
-  performHealthCheck(providerId: string): HealthCheck {
-    const provider = this.providers.get(providerId);
-    if (!provider) {
-      throw new Error(`Provider ${providerId} not found`);
-    }
+		throw new Error('All providers failed');
+	}
 
-    // Simulate health check
-    const latency = provider.latency + (Math.random() - 0.5) * 50;
-    const errorRate = provider.errorRate + (Math.random() - 0.5) * 0.5;
-    
-    let status: "healthy" | "degraded" | "down" = "healthy";
-    if (errorRate > 5 || latency > 1000) {
-      status = "down";
-    } else if (errorRate > 1 || latency > 500) {
-      status = "degraded";
-    }
+	private async simulateApiCall(
+		provider: ApiProvider,
+		data: any
+	): Promise<{ data: any; duration: number }> {
+		// Simulate network latency
+		await new Promise((resolve) => setTimeout(resolve, provider.latency));
 
-    const healthCheck: HealthCheck = {
-      providerId,
-      timestamp: new Date(),
-      status,
-      latency: Math.max(0, latency),
-      errorRate: Math.max(0, errorRate)
-    };
+		// Simulate random failures based on error rate
+		if (Math.random() * 100 < provider.errorRate) {
+			throw new Error('API_ERROR');
+		}
 
-    this.healthChecks.push(healthCheck);
-    return healthCheck;
-  }
+		return {
+			data: { ...data, processedBy: provider.name },
+			duration: provider.latency,
+		};
+	}
 
-  private logRequest(request: ApiRequest): void {
-    this.requests.push(request);
-    // Keep only last 1000 requests
-    if (this.requests.length > 1000) {
-      this.requests = this.requests.slice(-1000);
-    }
-  }
+	private getHealthyProviders(type: string): ApiProvider[] {
+		return Array.from(this.providers.values())
+			.filter((p) => p.type === type)
+			.filter((p) => this.circuitBreakers.get(p.id)?.canExecute())
+			.sort((a, b) => a.priority - b.priority);
+	}
 
-  getProviderStats(providerId: string) {
-    const recent = this.requests
-      .filter(r => r.provider === this.providers.get(providerId)?.name)
-      .slice(-100);
-    
-    const successful = recent.filter(r => r.success).length;
-    const avgLatency = recent.reduce((sum, r) => sum + r.duration, 0) / recent.length || 0;
-    
-    return {
-      totalRequests: recent.length,
-      successRate: recent.length > 0 ? (successful / recent.length) * 100 : 0,
-      avgLatency,
-      errorRate: recent.length > 0 ? ((recent.length - successful) / recent.length) * 100 : 0
-    };
-  }
+	performHealthCheck(providerId: string): HealthCheck {
+		const provider = this.providers.get(providerId);
+		if (!provider) {
+			throw new Error(`Provider ${providerId} not found`);
+		}
 
-  getSystemOverview() {
-    const allProviders = Array.from(this.providers.values());
-    const healthyCount = allProviders.filter(p => 
-      this.circuitBreakers.get(p.id)?.getState() === "CLOSED"
-    ).length;
+		// Simulate health check
+		const latency = provider.latency + (Math.random() - 0.5) * 50;
+		const errorRate = provider.errorRate + (Math.random() - 0.5) * 0.5;
 
-    const recentRequests = this.requests.slice(-100);
-    const successRate = recentRequests.length > 0 
-      ? (recentRequests.filter(r => r.success).length / recentRequests.length) * 100
-      : 0;
+		let status: 'healthy' | 'degraded' | 'down' = 'healthy';
+		if (errorRate > 5 || latency > 1000) {
+			status = 'down';
+		} else if (errorRate > 1 || latency > 500) {
+			status = 'degraded';
+		}
 
-    const avgLatency = recentRequests.reduce((sum, r) => sum + r.duration, 0) / recentRequests.length || 0;
+		const healthCheck: HealthCheck = {
+			providerId,
+			timestamp: new Date(),
+			status,
+			latency: Math.max(0, latency),
+			errorRate: Math.max(0, errorRate),
+		};
 
-    return {
-      totalProviders: allProviders.length,
-      healthyProviders: healthyCount,
-      systemHealth: successRate,
-      avgLatency,
-      requestVolume: recentRequests.length
-    };
-  }
+		this.healthChecks.push(healthCheck);
+		return healthCheck;
+	}
+
+	private logRequest(request: ApiRequest): void {
+		this.requests.push(request);
+		// Keep only last 1000 requests
+		if (this.requests.length > 1000) {
+			this.requests = this.requests.slice(-1000);
+		}
+	}
+
+	getProviderStats(providerId: string) {
+		const recent = this.requests
+			.filter((r) => r.provider === this.providers.get(providerId)?.name)
+			.slice(-100);
+
+		const successful = recent.filter((r) => r.success).length;
+		const avgLatency =
+			recent.reduce((sum, r) => sum + r.duration, 0) / recent.length || 0;
+
+		return {
+			totalRequests: recent.length,
+			successRate: recent.length > 0 ? (successful / recent.length) * 100 : 0,
+			avgLatency,
+			errorRate:
+				recent.length > 0
+					? ((recent.length - successful) / recent.length) * 100
+					: 0,
+		};
+	}
+
+	getSystemOverview() {
+		const allProviders = Array.from(this.providers.values());
+		const healthyCount = allProviders.filter(
+			(p) => this.circuitBreakers.get(p.id)?.getState() === 'CLOSED'
+		).length;
+
+		const recentRequests = this.requests.slice(-100);
+		const successRate =
+			recentRequests.length > 0
+				? (recentRequests.filter((r) => r.success).length /
+						recentRequests.length) *
+				  100
+				: 0;
+
+		const avgLatency =
+			recentRequests.reduce((sum, r) => sum + r.duration, 0) /
+				recentRequests.length || 0;
+
+		return {
+			totalProviders: allProviders.length,
+			healthyProviders: healthyCount,
+			systemHealth: successRate,
+			avgLatency,
+			requestVolume: recentRequests.length,
+		};
+	}
 }
 
 class CircuitBreaker {
-  private state: "CLOSED" | "OPEN" | "HALF_OPEN" = "CLOSED";
-  private failureCount = 0;
-  private lastFailureTime?: Date;
-  private readonly failureThreshold = 5;
-  private readonly recoveryTimeout = 60000; // 1 minute
+	private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
+	private failureCount = 0;
+	private lastFailureTime?: Date;
+	private readonly failureThreshold = 5;
+	private readonly recoveryTimeout = 60000; // 1 minute
 
-  constructor(private providerId: string) {}
+	constructor(private providerId: string) {}
 
-  canExecute(): boolean {
-    if (this.state === "CLOSED") {
-      return true;
-    }
+	canExecute(): boolean {
+		if (this.state === 'CLOSED') {
+			return true;
+		}
 
-    if (this.state === "OPEN") {
-      if (this.lastFailureTime && 
-          Date.now() - this.lastFailureTime.getTime() > this.recoveryTimeout) {
-        this.state = "HALF_OPEN";
-        return true;
-      }
-      return false;
-    }
+		if (this.state === 'OPEN') {
+			if (
+				this.lastFailureTime &&
+				Date.now() - this.lastFailureTime.getTime() > this.recoveryTimeout
+			) {
+				this.state = 'HALF_OPEN';
+				return true;
+			}
+			return false;
+		}
 
-    // HALF_OPEN - allow one request to test
-    return true;
-  }
+		// HALF_OPEN - allow one request to test
+		return true;
+	}
 
-  onSuccess(): void {
-    this.failureCount = 0;
-    this.state = "CLOSED";
-  }
+	onSuccess(): void {
+		this.failureCount = 0;
+		this.state = 'CLOSED';
+	}
 
-  onFailure(): void {
-    this.failureCount++;
-    this.lastFailureTime = new Date();
+	onFailure(): void {
+		this.failureCount++;
+		this.lastFailureTime = new Date();
 
-    if (this.failureCount >= this.failureThreshold) {
-      this.state = "OPEN";
-    }
-  }
+		if (this.failureCount >= this.failureThreshold) {
+			this.state = 'OPEN';
+		}
+	}
 
-  getState(): "CLOSED" | "OPEN" | "HALF_OPEN" {
-    return this.state;
-  }
+	getState(): 'CLOSED' | 'OPEN' | 'HALF_OPEN' {
+		return this.state;
+	}
 
-  getFailureCount(): number {
-    return this.failureCount;
-  }
+	getFailureCount(): number {
+		return this.failureCount;
+	}
 
-  reset(): void {
-    this.state = "CLOSED";
-    this.failureCount = 0;
-    this.lastFailureTime = undefined;
-  }
+	reset(): void {
+		this.state = 'CLOSED';
+		this.failureCount = 0;
+		this.lastFailureTime = undefined;
+	}
 }
 
 // Export singleton instance
