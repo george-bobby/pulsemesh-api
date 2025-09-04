@@ -2,12 +2,14 @@
 export interface ApiProvider {
   id: string;
   name: string;
-  type: "payment" | "sms" | "email" | "maps";
+  type: "payment" | "sms" | "email" | "maps" | "ai" | "storage" | "auth" | "video" | "realtime" | "analytics" | "monitoring";
   endpoint: string;
   isHealthy: boolean;
   latency: number;
   errorRate: number;
   priority: number;
+  isPrimary?: boolean;
+  lastCheck?: string;
 }
 
 export interface ApiRequest {
@@ -32,6 +34,7 @@ export interface HealthCheck {
 
 // Simulated providers
 export const PROVIDERS: ApiProvider[] = [
+  // Payment Providers
   {
     id: "stripe",
     name: "Stripe",
@@ -40,7 +43,9 @@ export const PROVIDERS: ApiProvider[] = [
     isHealthy: true,
     latency: 125,
     errorRate: 0.1,
-    priority: 1
+    priority: 1,
+    isPrimary: true,
+    lastCheck: "2 min ago"
   },
   {
     id: "paypal", 
@@ -50,7 +55,8 @@ export const PROVIDERS: ApiProvider[] = [
     isHealthy: false,
     latency: 380,
     errorRate: 2.1,
-    priority: 2
+    priority: 2,
+    lastCheck: "1 min ago"
   },
   {
     id: "square",
@@ -60,8 +66,11 @@ export const PROVIDERS: ApiProvider[] = [
     isHealthy: true,
     latency: 210,
     errorRate: 0.3,
-    priority: 3
+    priority: 3,
+    lastCheck: "3 min ago"
   },
+  
+  // Communication Providers
   {
     id: "twilio",
     name: "Twilio",
@@ -70,7 +79,9 @@ export const PROVIDERS: ApiProvider[] = [
     isHealthy: false,
     latency: 0,
     errorRate: 100,
-    priority: 1
+    priority: 1,
+    isPrimary: true,
+    lastCheck: "15 min ago"
   },
   {
     id: "vonage",
@@ -80,8 +91,11 @@ export const PROVIDERS: ApiProvider[] = [
     isHealthy: true,
     latency: 180,
     errorRate: 0.5,
-    priority: 2
+    priority: 2,
+    lastCheck: "5 min ago"
   },
+  
+  // Email Providers
   {
     id: "sendgrid",
     name: "SendGrid",
@@ -90,7 +104,8 @@ export const PROVIDERS: ApiProvider[] = [
     isHealthy: true,
     latency: 95,
     errorRate: 0.2,
-    priority: 1
+    priority: 1,
+    lastCheck: "1 min ago"
   },
   {
     id: "mailgun",
@@ -100,8 +115,22 @@ export const PROVIDERS: ApiProvider[] = [
     isHealthy: true,
     latency: 140,
     errorRate: 0.4,
-    priority: 2
+    priority: 2,
+    lastCheck: "4 min ago"
   },
+  {
+    id: "brevo",
+    name: "Brevo",
+    type: "email",
+    endpoint: "https://api.brevo.com",
+    isHealthy: true,
+    latency: 120,
+    errorRate: 0.3,
+    priority: 3,
+    lastCheck: "2 min ago"
+  },
+  
+  // Maps Providers
   {
     id: "google-maps",
     name: "Google Maps",
@@ -110,7 +139,141 @@ export const PROVIDERS: ApiProvider[] = [
     isHealthy: true,
     latency: 85,
     errorRate: 0.1,
-    priority: 1
+    priority: 1,
+    lastCheck: "1 min ago"
+  },
+  
+  // AI Providers
+  {
+    id: "openai",
+    name: "OpenAI",
+    type: "ai",
+    endpoint: "https://api.openai.com",
+    isHealthy: true,
+    latency: 145,
+    errorRate: 0.2,
+    priority: 1,
+    isPrimary: true,
+    lastCheck: "30 sec ago"
+  },
+  {
+    id: "anthropic",
+    name: "Anthropic",
+    type: "ai",
+    endpoint: "https://api.anthropic.com",
+    isHealthy: true,
+    latency: 89,
+    errorRate: 0.1,
+    priority: 2,
+    lastCheck: "45 sec ago"
+  },
+  {
+    id: "google-ai",
+    name: "Google AI",
+    type: "ai",
+    endpoint: "https://generativelanguage.googleapis.com",
+    isHealthy: false,
+    latency: 210,
+    errorRate: 1.5,
+    priority: 3,
+    lastCheck: "8 min ago"
+  },
+  
+  // Storage Providers
+  {
+    id: "cloudinary",
+    name: "Cloudinary",
+    type: "storage",
+    endpoint: "https://api.cloudinary.com",
+    isHealthy: true,
+    latency: 95,
+    errorRate: 0.2,
+    priority: 1,
+    lastCheck: "2 min ago"
+  },
+  {
+    id: "uploadthing",
+    name: "UploadThing",
+    type: "storage",
+    endpoint: "https://uploadthing.com/api",
+    isHealthy: true,
+    latency: 110,
+    errorRate: 0.4,
+    priority: 2,
+    lastCheck: "3 min ago"
+  },
+  
+  // Auth Providers
+  {
+    id: "clerk",
+    name: "Clerk",
+    type: "auth",
+    endpoint: "https://api.clerk.com",
+    isHealthy: true,
+    latency: 75,
+    errorRate: 0.1,
+    priority: 1,
+    isPrimary: true,
+    lastCheck: "1 min ago"
+  },
+  {
+    id: "auth0",
+    name: "Auth0",
+    type: "auth",
+    endpoint: "https://api.auth0.com",
+    isHealthy: true,
+    latency: 120,
+    errorRate: 0.3,
+    priority: 2,
+    lastCheck: "4 min ago"
+  },
+  
+  // Video & Realtime Providers
+  {
+    id: "livekit",
+    name: "LiveKit",
+    type: "video",
+    endpoint: "https://api.livekit.io",
+    isHealthy: true,
+    latency: 65,
+    errorRate: 0.2,
+    priority: 1,
+    lastCheck: "2 min ago"
+  },
+  {
+    id: "liveblocks",
+    name: "Liveblocks",
+    type: "realtime",
+    endpoint: "https://api.liveblocks.io",
+    isHealthy: true,
+    latency: 55,
+    errorRate: 0.1,
+    priority: 1,
+    lastCheck: "1 min ago"
+  },
+  
+  // Analytics & Monitoring
+  {
+    id: "mixpanel",
+    name: "Mixpanel",
+    type: "analytics",
+    endpoint: "https://api.mixpanel.com",
+    isHealthy: true,
+    latency: 85,
+    errorRate: 0.2,
+    priority: 1,
+    lastCheck: "3 min ago"
+  },
+  {
+    id: "sentry",
+    name: "Sentry",
+    type: "monitoring",
+    endpoint: "https://sentry.io/api",
+    isHealthy: true,
+    latency: 70,
+    errorRate: 0.1,
+    priority: 1,
+    lastCheck: "1 min ago"
   }
 ];
 
