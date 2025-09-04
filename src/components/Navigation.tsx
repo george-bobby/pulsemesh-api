@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
   Activity, 
@@ -13,13 +14,14 @@ import {
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
 
   const navItems = [
-    { icon: Activity, label: "Dashboard", href: "#dashboard", active: true },
-    { icon: Shield, label: "Providers", href: "#providers" },
-    { icon: BarChart3, label: "Analytics", href: "#analytics" },
-    { icon: Bell, label: "Alerts", href: "#alerts" },
-    { icon: Settings, label: "Settings", href: "#settings" },
+    { icon: Activity, label: "Dashboard", href: "/dashboard" },
+    { icon: Shield, label: "Providers", href: "/providers" },
+    { icon: BarChart3, label: "Analytics", href: "/analytics" },
+    { icon: Bell, label: "Alerts", href: "/alerts" },
+    { icon: Settings, label: "Settings", href: "/settings" },
   ];
 
   return (
@@ -40,18 +42,18 @@ const Navigation = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
             {navItems.map((item) => (
-              <a
+              <Link
                 key={item.label}
-                href={item.href}
+                to={item.href}
                 className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
-                  item.active 
+                  location.pathname === item.href
                     ? "bg-primary text-primary-foreground shadow-glow" 
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                 }`}
               >
                 <item.icon className="w-4 h-4" />
                 <span className="text-sm font-medium">{item.label}</span>
-              </a>
+              </Link>
             ))}
           </div>
 
@@ -81,18 +83,19 @@ const Navigation = () => {
           <div className="md:hidden py-4 border-t border-border">
             <div className="flex flex-col space-y-2">
               {navItems.map((item) => (
-                <a
+                <Link
                   key={item.label}
-                  href={item.href}
+                  to={item.href}
                   className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
-                    item.active 
+                    location.pathname === item.href
                       ? "bg-primary text-primary-foreground shadow-glow" 
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                   }`}
+                  onClick={() => setIsOpen(false)}
                 >
                   <item.icon className="w-4 h-4" />
                   <span className="text-sm font-medium">{item.label}</span>
-                </a>
+                </Link>
               ))}
             </div>
           </div>
