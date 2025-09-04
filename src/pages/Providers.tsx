@@ -92,21 +92,25 @@ const Providers = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Sidebar - API Providers Overview */}
           <div className="lg:col-span-1">
-            <Card className="p-4 border border-border">
-              <div className="flex items-center justify-between mb-4">
+            <Card className="p-4 border border-border min-h-[600px] sticky top-8">
+              <div className="flex items-center mb-4">
                 <h2 className="text-lg font-semibold text-foreground">API Providers</h2>
-                <DemoSettingsDialog />
               </div>
               <p className="text-sm text-muted-foreground mb-4">
                 Monitor all connected services
               </p>
               <DemoManageModal />
+              {/* Provider Settings - Inline */}
+              <div className="mt-6">
+                <h3 className="text-md font-semibold text-foreground mb-4">Provider Settings</h3>
+                <ProviderSettingsInline />
+              </div>
             </Card>
           </div>
 
           {/* Main Content - Provider Cards */}
           <div className="lg:col-span-3">
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
               {PROVIDERS.map((provider) => (
                 <Card key={provider.id} className="p-4 border border-border hover:border-primary/50 transition-colors">
                   <div className="flex items-center justify-between mb-4">
@@ -171,9 +175,9 @@ const Providers = () => {
     </div>
   );
 };
-// --- Provider Settings Dialog ---
-const DemoSettingsDialog = () => {
-  const [open, setOpen] = useState(false);
+
+// --- Provider Settings Inline Component ---
+const ProviderSettingsInline = () => {
   const [settings, setSettings] = useState({
     healthCheckInterval: 30,
     maxRetries: 3,
@@ -186,113 +190,100 @@ const DemoSettingsDialog = () => {
   const handleSave = () => {
     console.log('Saving provider settings:', settings);
     // Here you would typically save to your state management or API
-    setOpen(false);
   };
 
   return (
-    <>
-      <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
-        <Settings className="w-4 h-4" />
-      </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Provider Settings</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="healthCheck">Health Check Interval (s)</Label>
-                <Input
-                  id="healthCheck"
-                  type="number"
-                  value={settings.healthCheckInterval}
-                  onChange={(e) => setSettings(prev => ({
-                    ...prev,
-                    healthCheckInterval: parseInt(e.target.value)
-                  }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="maxRetries">Max Retries</Label>
-                <Input
-                  id="maxRetries"
-                  type="number"
-                  value={settings.maxRetries}
-                  onChange={(e) => setSettings(prev => ({
-                    ...prev,
-                    maxRetries: parseInt(e.target.value)
-                  }))}
-                />
-              </div>
-            </div>
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label htmlFor="healthCheck" className="text-xs">Health Check Interval (s)</Label>
+          <Input
+            id="healthCheck"
+            type="number"
+            value={settings.healthCheckInterval}
+            onChange={(e) => setSettings(prev => ({
+              ...prev,
+              healthCheckInterval: parseInt(e.target.value)
+            }))}
+            className="h-8 text-sm"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="maxRetries" className="text-xs">Max Retries</Label>
+          <Input
+            id="maxRetries"
+            type="number"
+            value={settings.maxRetries}
+            onChange={(e) => setSettings(prev => ({
+              ...prev,
+              maxRetries: parseInt(e.target.value)
+            }))}
+            className="h-8 text-sm"
+          />
+        </div>
+      </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="timeout">Timeout (ms)</Label>
-              <Input
-                id="timeout"
-                type="number"
-                value={settings.timeoutMs}
-                onChange={(e) => setSettings(prev => ({
-                  ...prev,
-                  timeoutMs: parseInt(e.target.value)
-                }))}
-              />
-            </div>
+      <div className="space-y-2">
+        <Label htmlFor="timeout" className="text-xs">Timeout (ms)</Label>
+        <Input
+          id="timeout"
+          type="number"
+          value={settings.timeoutMs}
+          onChange={(e) => setSettings(prev => ({
+            ...prev,
+            timeoutMs: parseInt(e.target.value)
+          }))}
+          className="h-8 text-sm"
+        />
+      </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="logLevel">Log Level</Label>
-              <Select value={settings.logLevel} onValueChange={(value) =>
-                setSettings(prev => ({ ...prev, logLevel: value }))
-              }>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="debug">Debug</SelectItem>
-                  <SelectItem value="info">Info</SelectItem>
-                  <SelectItem value="warn">Warning</SelectItem>
-                  <SelectItem value="error">Error</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      <div className="space-y-2">
+        <Label htmlFor="logLevel" className="text-xs">Log Level</Label>
+        <Select value={settings.logLevel} onValueChange={(value) =>
+          setSettings(prev => ({ ...prev, logLevel: value }))
+        }>
+          <SelectTrigger className="h-8 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="debug">Debug</SelectItem>
+            <SelectItem value="info">Info</SelectItem>
+            <SelectItem value="warn">Warning</SelectItem>
+            <SelectItem value="error">Error</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-            <div className="flex items-center justify-between">
-              <Label htmlFor="failover">Enable Auto Failover</Label>
-              <Switch
-                id="failover"
-                checked={settings.enableFailover}
-                onCheckedChange={(checked) => setSettings(prev => ({
-                  ...prev,
-                  enableFailover: checked
-                }))}
-              />
-            </div>
+      <div className="flex items-center justify-between">
+        <Label htmlFor="failover" className="text-xs">Enable Auto Failover</Label>
+        <Switch
+          id="failover"
+          checked={settings.enableFailover}
+          onCheckedChange={(checked) => setSettings(prev => ({
+            ...prev,
+            enableFailover: checked
+          }))}
+        />
+      </div>
 
-            <div className="flex items-center justify-between">
-              <Label htmlFor="alerts">Enable Alerts</Label>
-              <Switch
-                id="alerts"
-                checked={settings.alertsEnabled}
-                onCheckedChange={(checked) => setSettings(prev => ({
-                  ...prev,
-                  alertsEnabled: checked
-                }))}
-              />
-            </div>
+      <div className="flex items-center justify-between">
+        <Label htmlFor="alerts" className="text-xs">Enable Alerts</Label>
+        <Switch
+          id="alerts"
+          checked={settings.alertsEnabled}
+          onCheckedChange={(checked) => setSettings(prev => ({
+            ...prev,
+            alertsEnabled: checked
+          }))}
+        />
+      </div>
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSave}>
-                Save Settings
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+      <div className="pt-2">
+        <Button onClick={handleSave} size="sm" className="w-full">
+          Save Settings
+        </Button>
+      </div>
+    </div>
   );
 };
 
@@ -350,7 +341,7 @@ const DemoManageModal = () => {
         Manage
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Manage API Providers</DialogTitle>
           </DialogHeader>
@@ -372,7 +363,7 @@ const DemoManageModal = () => {
           </div>
 
           {/* Provider List */}
-          <div className="space-y-3">
+          <div className="space-y-3 overflow-y-auto flex-1 pr-2">
             {providers.map((provider) => (
               <Card key={provider.id} className="p-4">
                 <div className="flex items-center justify-between">

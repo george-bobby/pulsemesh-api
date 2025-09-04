@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Activity, 
-  Zap, 
-  AlertTriangle, 
+import {
+  Activity,
+  Zap,
+  AlertTriangle,
   PlayCircle,
   Settings,
   RotateCcw
@@ -33,7 +33,7 @@ const CircuitBreakerPanel = () => {
       timeout: 60000
     },
     {
-      id: "paypal-cb", 
+      id: "paypal-cb",
       provider: "PayPal",
       state: "half-open",
       failureCount: 3,
@@ -44,7 +44,7 @@ const CircuitBreakerPanel = () => {
     },
     {
       id: "twilio-cb",
-      provider: "Twilio", 
+      provider: "Twilio",
       state: "open",
       failureCount: 8,
       threshold: 5,
@@ -77,9 +77,9 @@ const CircuitBreakerPanel = () => {
   };
 
   const resetCircuitBreaker = (id: string) => {
-    setCircuitBreakers(prev => 
-      prev.map(cb => 
-        cb.id === id 
+    setCircuitBreakers(prev =>
+      prev.map(cb =>
+        cb.id === id
           ? { ...cb, state: "closed", failureCount: 0, lastFailure: undefined, nextAttempt: undefined }
           : cb
       )
@@ -109,7 +109,7 @@ const CircuitBreakerPanel = () => {
 
       <div className="space-y-4">
         {circuitBreakers.map((cb) => (
-          <div 
+          <div
             key={cb.id}
             className="p-4 rounded-lg border border-border hover:bg-secondary/30 transition-colors"
           >
@@ -124,7 +124,7 @@ const CircuitBreakerPanel = () => {
                     </Badge>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Failures: {cb.failureCount}/{cb.threshold} • Timeout: {cb.timeout/1000}s
+                    Failures: {cb.failureCount}/{cb.threshold} • Timeout: {cb.timeout / 1000}s
                   </div>
                   {cb.lastFailure && (
                     <div className="text-xs text-muted-foreground mt-1">
@@ -136,18 +136,18 @@ const CircuitBreakerPanel = () => {
               </div>
 
               <div className="flex items-center space-x-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => testFailover(cb.provider)}
                 >
                   <PlayCircle className="w-3 h-3 mr-1" />
                   Test
                 </Button>
-                
+
                 {cb.state !== "closed" && (
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="sm"
                     onClick={() => resetCircuitBreaker(cb.id)}
                   >
@@ -163,24 +163,22 @@ const CircuitBreakerPanel = () => {
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">Circuit State</span>
                 <div className="flex items-center space-x-2">
-                  <div className={`w-2 h-2 rounded-full ${
-                    cb.state === "closed" ? "bg-success" :
+                  <div className={`w-2 h-2 rounded-full ${cb.state === "closed" ? "bg-success" :
                     cb.state === "half-open" ? "bg-warning" : "bg-error"
-                  }`} />
+                    }`} />
                   <span className="text-muted-foreground">
                     {cb.state === "closed" ? "Traffic flowing" :
-                     cb.state === "half-open" ? "Testing recovery" : "Traffic blocked"}
+                      cb.state === "half-open" ? "Testing recovery" : "Traffic blocked"}
                   </span>
                 </div>
               </div>
-              
-              <div className="mt-2 bg-muted rounded-full h-1.5">
-                <div 
-                  className={`h-full rounded-full transition-all duration-300 ${
-                    cb.state === "closed" ? "bg-success" :
+
+              <div className="mt-2 bg-muted rounded-full h-1.5 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${cb.state === "closed" ? "bg-success" :
                     cb.state === "half-open" ? "bg-warning" : "bg-error"
-                  }`}
-                  style={{ width: `${(cb.failureCount / cb.threshold) * 100}%` }}
+                    }`}
+                  style={{ width: `${Math.min((cb.failureCount / cb.threshold) * 100, 100)}%` }}
                 />
               </div>
             </div>
