@@ -208,7 +208,7 @@ const Index = () => {
             <span className="text-lg font-bold text-foreground">API Resilience Hub</span>
           </div>
           <p className="text-muted-foreground text-sm">
-            © 2024 API Resilience Hub. Built with Lovable for demonstration purposes.
+            © 2024 API Resilience Hub. Built for enterprise API management.
           </p>
         </div>
       </footer>

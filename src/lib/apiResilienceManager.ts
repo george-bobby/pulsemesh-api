@@ -58,32 +58,19 @@ export const PROVIDERS: ApiProvider[] = [
 		isPrimary: true,
 		lastCheck: '2 min ago',
 	},
+	// Auth Providers
 	{
-		id: 'paypal',
-		name: 'PayPal',
-		type: 'payment',
-		endpoint: 'https://api.paypal.com',
-		isHealthy: false,
-		latency: 380,
-		errorRate: 2.1,
-		priority: 2,
-		lastCheck: '1 min ago',
-	},
-
-	// Communication Providers
-	{
-		id: 'twilio',
-		name: 'Twilio',
-		type: 'sms',
-		endpoint: 'https://api.twilio.com',
-		isHealthy: false,
-		latency: 0,
-		errorRate: 100,
+		id: 'clerk',
+		name: 'Clerk',
+		type: 'auth',
+		endpoint: 'https://api.clerk.com',
+		isHealthy: true,
+		latency: 75,
+		errorRate: 0.1,
 		priority: 1,
 		isPrimary: true,
-		lastCheck: '15 min ago',
+		lastCheck: '1 min ago',
 	},
-
 	// Email Providers
 	{
 		id: 'mailgun',
@@ -133,20 +120,6 @@ export const PROVIDERS: ApiProvider[] = [
 		errorRate: 0.2,
 		priority: 1,
 		lastCheck: '2 min ago',
-	},
-
-	// Auth Providers
-	{
-		id: 'clerk',
-		name: 'Clerk',
-		type: 'auth',
-		endpoint: 'https://api.clerk.com',
-		isHealthy: true,
-		latency: 75,
-		errorRate: 0.1,
-		priority: 1,
-		isPrimary: true,
-		lastCheck: '1 min ago',
 	},
 ];
 
