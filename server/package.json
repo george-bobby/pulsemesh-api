@@ -1,0 +1,50 @@
+{
+	"name": "pulsemesh-api-backend",
+	"version": "1.0.0",
+	"description": "Hono.js backend for PulseMesh API monitoring system",
+	"main": "dist/index.js",
+	"type": "module",
+	"scripts": {
+		"dev": "tsx watch src/index.ts",
+		"build": "tsc",
+		"start": "node dist/index.js",
+		"start:dev": "tsx src/index.ts",
+		"lint": "eslint src --ext .ts",
+		"clean": "rimraf dist",
+		"convex:dev": "npx convex dev",
+		"convex:deploy": "npx convex deploy"
+	},
+	"dependencies": {
+		"hono": "^4.6.3",
+		"@hono/node-server": "^1.13.1",
+		"@hono/zod-validator": "^0.4.1",
+		"convex": "^1.27.0",
+		"@clerk/backend": "^1.15.6",
+		"ws": "^8.18.0",
+		"node-cron": "^3.0.3",
+		"axios": "^1.7.7",
+		"dotenv": "^16.4.5",
+		"zod": "^3.25.76"
+	},
+	"devDependencies": {
+		"@types/node": "^22.16.5",
+		"@types/ws": "^8.5.13",
+		"@types/node-cron": "^3.0.11",
+		"typescript": "^5.8.3",
+		"tsx": "^4.19.2",
+		"eslint": "^9.32.0",
+		"@typescript-eslint/eslint-plugin": "^8.38.0",
+		"@typescript-eslint/parser": "^8.38.0",
+		"rimraf": "^6.0.1"
+	},
+	"keywords": [
+		"hono",
+		"api-monitoring",
+		"convex",
+		"clerk",
+		"websocket",
+		"health-check"
+	],
+	"author": "PulseMesh Team",
+	"license": "MIT"
+}

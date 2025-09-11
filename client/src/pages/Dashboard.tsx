@@ -8,10 +8,12 @@ import CircuitBreakerPanel from "@/components/CircuitBreakerPanel";
 import FailoverSimulator from "@/components/FailoverSimulator";
 import AIResilienceEngine from "@/components/AIResilienceEngine";
 import LiveApiTester from "@/components/LiveApiTester";
-import { 
-  Activity, 
-  Shield, 
-  Zap, 
+import UserProfile from "@/components/UserProfile";
+import TestMessages from "@/components/TestMessages";
+import {
+  Activity,
+  Shield,
+  Zap,
   Clock,
   TrendingUp,
   Database,
@@ -75,16 +77,21 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      
+
       <main className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            API Resilience Hub
-          </h1>
-          <p className="text-muted-foreground">
-            Intelligent middleware platform for API monitoring, failover, and resilience
-          </p>
+        <div className="mb-8 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              API Resilience Hub
+            </h1>
+            <p className="text-muted-foreground">
+              Intelligent middleware platform for API monitoring, failover, and resilience
+            </p>
+          </div>
+          {/* <div className="lg:w-80">
+            <UserProfile />
+          </div> */}
         </div>
 
         {/* Status Cards */}
@@ -98,7 +105,7 @@ const Index = () => {
             trendValue="+0.2%"
             icon={<Shield className="w-4 h-4" />}
           />
-          
+
           <StatusCard
             title="Active Providers"
             value="6/8"
@@ -108,7 +115,7 @@ const Index = () => {
             trendValue="2 degraded"
             icon={<Database className="w-4 h-4" />}
           />
-          
+
           <StatusCard
             title="Avg Response Time"
             value="142ms"
@@ -118,7 +125,7 @@ const Index = () => {
             trendValue="-8ms"
             icon={<Clock className="w-4 h-4" />}
           />
-          
+
           <StatusCard
             title="Request Volume"
             value="1.8K"
@@ -132,12 +139,13 @@ const Index = () => {
 
         {/* Main Dashboard Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="resilience">AI Resilience</TabsTrigger>
             <TabsTrigger value="testing">Live Testing</TabsTrigger>
             <TabsTrigger value="simulation">Simulation</TabsTrigger>
             <TabsTrigger value="providers">Providers</TabsTrigger>
+            <TabsTrigger value="auth-test">Auth Test</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -152,9 +160,9 @@ const Index = () => {
                 type="area"
                 height={160}
               />
-              
+
               <MetricsChart
-                title="Request Volume" 
+                title="Request Volume"
                 subtitle="Requests per minute"
                 data={requestVolumeData}
                 dataKey="value"
@@ -162,12 +170,12 @@ const Index = () => {
                 type="area"
                 height={160}
               />
-              
+
               <MetricsChart
                 title="Error Rate"
                 subtitle="Failed requests %"
                 data={errorRateData}
-                dataKey="value" 
+                dataKey="value"
                 color="hsl(0, 84%, 60%)"
                 type="line"
                 height={160}
@@ -209,6 +217,10 @@ const Index = () => {
           <TabsContent value="providers" className="space-y-6">
             <ProviderStatus />
             <CircuitBreakerPanel />
+          </TabsContent>
+
+          <TabsContent value="auth-test" className="space-y-6">
+            <TestMessages />
           </TabsContent>
         </Tabs>
       </main>
