@@ -7,7 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Check, ChevronsUpDown } from "lucide-react";
+import { useProviders } from "@/hooks/useProviders";
+import { useToast } from "@/hooks/use-toast";
+import { Plus, Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const POPULAR_PROVIDERS = [
@@ -68,6 +70,10 @@ const AddProviderDialog = ({ children }: AddProviderDialogProps) => {
   const [customName, setCustomName] = useState("");
   const [customEndpoint, setCustomEndpoint] = useState("");
   const [customType, setCustomType] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { createProvider } = useProviders();
+  const { toast } = useToast();
 
   const handleProviderSelect = (provider: typeof POPULAR_PROVIDERS[0]) => {
     setSelectedProvider(provider);
@@ -77,20 +83,53 @@ const AddProviderDialog = ({ children }: AddProviderDialogProps) => {
     setComboOpen(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically add the provider to your state/backend
-    console.log("Adding provider:", {
-      name: customName,
-      endpoint: customEndpoint,
-      type: customType
-    });
-    setOpen(false);
-    // Reset form
-    setSelectedProvider(null);
-    setCustomName("");
-    setCustomEndpoint("");
-    setCustomType("");
+
+    if (!customName.trim() || !customEndpoint.trim() || !customType) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await createProvider({
+        name: customName.trim(),
+        endpoint: customEndpoint.trim(),
+        type: customType,
+        isHealthy: true,
+        latency: 0,
+        errorRate: 0,
+        priority: 1,
+        isPrimary: false,
+      });
+
+      toast({
+        title: "Provider Added",
+        description: `${customName} has been added successfully and will be monitored.`,
+      });
+
+      setOpen(false);
+      // Reset form
+      setSelectedProvider(null);
+      setCustomName("");
+      setCustomEndpoint("");
+      setCustomType("");
+    } catch (error) {
+      console.error("Failed to create provider:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add provider. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getTypeColor = (type: string) => {
@@ -106,7 +145,7 @@ const AddProviderDialog = ({ children }: AddProviderDialogProps) => {
         <DialogHeader>
           <DialogTitle className="text-foreground">Add New Provider</DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="provider-select" className="text-foreground">Select Provider</Label>
@@ -220,9 +259,19 @@ const AddProviderDialog = ({ children }: AddProviderDialogProps) => {
               type="submit"
               variant="cyber"
               className="gap-2"
+              disabled={isSubmitting}
             >
-              <Plus className="w-4 h-4" />
-              Add Provider
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  Add Provider
+                </>
+              )}
             </Button>
           </div>
         </form>

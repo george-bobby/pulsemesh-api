@@ -7,8 +7,8 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load environment variables from .env.local
-config({ path: join(__dirname, '../../.env.local') });
+// Load environment variables from .env
+config({ path: join(__dirname, '../../.env') });
 
 // Environment validation schema
 const envSchema = z.object({
@@ -45,9 +45,7 @@ const envSchema = z.object({
 			}
 		}),
 
-	// WebSocket Configuration
-	WS_PORT: z.string().default('3002').transform(Number),
-	WS_HEARTBEAT_INTERVAL: z.string().default('30000').transform(Number),
+	// Monitoring Configuration (Polling-based updates)
 
 	// Logging Configuration
 	LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),

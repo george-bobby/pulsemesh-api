@@ -1,10 +1,11 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  AlertTriangle, 
-  XCircle, 
-  CheckCircle2, 
+import { ProviderWithMetrics } from "@/hooks/useProviders";
+import {
+  AlertTriangle,
+  XCircle,
+  CheckCircle2,
   Clock,
   ExternalLink,
   X
@@ -20,42 +21,67 @@ interface Alert {
   resolved?: boolean;
 }
 
-const AlertCenter = () => {
-  const alerts: Alert[] = [
-    {
-      id: "1",
-      title: "PayPal API Degraded Performance",
-      message: "Response times increased to 380ms (above 300ms threshold)",
-      severity: "warning",
-      timestamp: "2 min ago",
-      provider: "PayPal"
-    },
-    {
-      id: "2", 
-      title: "Twilio SMS Service Down",
-      message: "All requests failing with 503 errors. Failover activated to Vonage.",
-      severity: "critical",
-      timestamp: "15 min ago",
-      provider: "Twilio"
-    },
-    {
-      id: "3",
-      title: "Circuit Breaker Opened",
-      message: "Stripe circuit breaker opened due to 5 consecutive failures",
-      severity: "critical",
-      timestamp: "1 hour ago",
-      provider: "Stripe",
-      resolved: true
-    },
-    {
-      id: "4",
-      title: "High Request Volume",
-      message: "API requests 150% above normal baseline",
-      severity: "info",
-      timestamp: "2 hours ago",
-      provider: "Multiple"
+interface AlertCenterProps {
+  providers?: ProviderWithMetrics[];
+}
+
+const AlertCenter = ({ providers = [] }: AlertCenterProps) => {
+  // Generate alerts from real provider data
+  const alerts: Alert[] = providers.flatMap((provider) => {
+    const alerts: Alert[] = [];
+
+    // Critical: Provider is down
+    if (!provider.isHealthy) {
+      alerts.push({
+        id: `${provider._id}-down`,
+        title: `${provider.name} Service Down`,
+        message: `API endpoint is not responding. Last check: ${new Date(provider.lastCheck).toLocaleTimeString()}`,
+        severity: "critical",
+        timestamp: getTimeAgo(provider.lastCheck),
+        provider: provider.name
+      });
     }
-  ];
+
+    // Warning: High latency
+    if (provider.isHealthy && provider.latency > 500) {
+      alerts.push({
+        id: `${provider._id}-latency`,
+        title: `${provider.name} High Latency`,
+        message: `Response time is ${provider.latency}ms (above 500ms threshold)`,
+        severity: "warning",
+        timestamp: getTimeAgo(provider.lastCheck),
+        provider: provider.name
+      });
+    }
+
+    // Warning: High error rate
+    if (provider.isHealthy && provider.errorRate > 5) {
+      alerts.push({
+        id: `${provider._id}-errors`,
+        title: `${provider.name} High Error Rate`,
+        message: `Error rate is ${provider.errorRate.toFixed(1)}% (above 5% threshold)`,
+        severity: "warning",
+        timestamp: getTimeAgo(provider.lastCheck),
+        provider: provider.name
+      });
+    }
+
+    return alerts;
+  });
+
+  const getTimeAgo = (timestamp: string): string => {
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diffMs = now.getTime() - time.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} min ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  };
 
   const getSeverityIcon = (severity: Alert["severity"]) => {
     switch (severity) {
@@ -97,11 +123,10 @@ const AlertCenter = () => {
         {alerts.map((alert) => (
           <div
             key={alert.id}
-            className={`p-4 rounded-lg border transition-colors ${
-              alert.resolved 
-                ? "border-border bg-muted/30 opacity-60" 
-                : "border-border hover:bg-secondary/30"
-            }`}
+            className={`p-4 rounded-lg border transition-colors ${alert.resolved
+              ? "border-border bg-muted/30 opacity-60"
+              : "border-border hover:bg-secondary/30"
+              }`}
           >
             <div className="flex items-start space-x-3">
               <div className="mt-0.5">
@@ -125,7 +150,7 @@ const AlertCenter = () => {
                         </Badge>
                       )}
                     </div>
-                    
+
                     <p className={`text-sm mb-2 ${alert.resolved ? "text-muted-foreground" : "text-muted-foreground"}`}>
                       {alert.message}
                     </p>

@@ -1,81 +1,47 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
-  Circle, 
-  Settings, 
-  Activity, 
+import { ProviderWithMetrics } from "@/hooks/useProviders";
+import {
+  Circle,
+  Settings,
+  Activity,
   AlertTriangle,
   CheckCircle2,
   XCircle
 } from "lucide-react";
 
-interface Provider {
-  id: string;
-  name: string;
-  type: string;
-  status: "healthy" | "degraded" | "down";
-  latency: number;
-  uptime: number;
-  lastCheck: string;
-  isPrimary: boolean;
+interface ProviderStatusProps {
+  providers?: ProviderWithMetrics[];
 }
 
-const ProviderStatus = () => {
-  const providers: Provider[] = [
-    {
-      id: "stripe",
-      name: "Stripe",
-      type: "Payment",
-      status: "healthy",
-      latency: 125,
-      uptime: 99.95,
-      lastCheck: "2 min ago",
-      isPrimary: true
-    },
-    {
-      id: "paypal",
-      name: "PayPal",
-      type: "Payment",
-      status: "degraded",
-      latency: 380,
-      uptime: 98.2,
-      lastCheck: "1 min ago",
-      isPrimary: false
-    },
-    {
-      id: "square",
-      name: "Square",
-      type: "Payment",
-      status: "healthy",
-      latency: 210,
-      uptime: 99.8,
-      lastCheck: "3 min ago",
-      isPrimary: false
-    },
-    {
-      id: "twilio",
-      name: "Twilio",
-      type: "SMS",
-      status: "down",
-      latency: 0,
-      uptime: 85.5,
-      lastCheck: "15 min ago",
-      isPrimary: true
-    },
-    {
-      id: "sendgrid",
-      name: "SendGrid",
-      type: "Email",
-      status: "healthy",
-      latency: 95,
-      uptime: 99.9,
-      lastCheck: "1 min ago",
-      isPrimary: true
-    }
-  ];
+const ProviderStatus = ({ providers = [] }: ProviderStatusProps) => {
+  // Helper function to determine status from provider data
+  const getProviderStatus = (provider: ProviderWithMetrics): "healthy" | "degraded" | "down" => {
+    if (!provider.isHealthy) return "down";
+    if (provider.errorRate > 5 || provider.latency > 500) return "degraded";
+    return "healthy";
+  };
 
-  const getStatusIcon = (status: Provider["status"]) => {
+  // Helper function to format last check time
+  const formatLastCheck = (lastCheck: string): string => {
+    try {
+      const date = new Date(lastCheck);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / (1000 * 60));
+
+      if (diffMins < 1) return "Just now";
+      if (diffMins < 60) return `${diffMins} min ago`;
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) return `${diffHours}h ago`;
+      return date.toLocaleDateString();
+    } catch {
+      return lastCheck;
+    }
+  };
+
+  const getStatusIcon = (status: "healthy" | "degraded" | "down") => {
     switch (status) {
       case "healthy":
         return <CheckCircle2 className="w-4 h-4 text-success" />;
@@ -86,7 +52,7 @@ const ProviderStatus = () => {
     }
   };
 
-  const getStatusColor = (status: Provider["status"]) => {
+  const getStatusColor = (status: "healthy" | "degraded" | "down") => {
     switch (status) {
       case "healthy":
         return "bg-success/20 text-success border-success/30";
@@ -102,7 +68,9 @@ const ProviderStatus = () => {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-lg font-semibold text-foreground">API Providers</h2>
-          <p className="text-sm text-muted-foreground">Monitor all connected services</p>
+          <p className="text-sm text-muted-foreground">
+            {providers.length === 0 ? "No providers configured" : `Monitor ${providers.length} connected services`}
+          </p>
         </div>
         <Button variant="outline" size="sm">
           <Settings className="w-4 h-4 mr-2" />
@@ -111,55 +79,66 @@ const ProviderStatus = () => {
       </div>
 
       <div className="space-y-4">
-        {providers.map((provider) => (
-          <div 
-            key={provider.id}
-            className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-secondary/30 transition-colors"
-          >
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                {getStatusIcon(provider.status)}
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-medium text-foreground">{provider.name}</span>
-                    {provider.isPrimary && (
-                      <Badge variant="outline" className="text-xs">Primary</Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                    <span>{provider.type}</span>
-                    <Circle className="w-1 h-1 fill-current" />
-                    <span>Last check: {provider.lastCheck}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-6">
-              <div className="text-right">
-                <div className="text-sm font-medium text-foreground">
-                  {provider.status === "down" ? "—" : `${provider.latency}ms`}
-                </div>
-                <div className="text-xs text-muted-foreground">Latency</div>
-              </div>
-              
-              <div className="text-right">
-                <div className="text-sm font-medium text-foreground">
-                  {provider.uptime}%
-                </div>
-                <div className="text-xs text-muted-foreground">Uptime (24h)</div>
-              </div>
-
-              <Badge className={`${getStatusColor(provider.status)} border`}>
-                {provider.status.charAt(0).toUpperCase() + provider.status.slice(1)}
-              </Badge>
-
-              <Button variant="ghost" size="icon">
-                <Activity className="w-4 h-4" />
-              </Button>
-            </div>
+        {providers.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p>No API providers configured yet.</p>
+            <p className="text-sm">Add providers to start monitoring.</p>
           </div>
-        ))}
+        ) : (
+          providers.map((provider) => {
+            const status = getProviderStatus(provider);
+            return (
+              <div
+                key={provider._id}
+                className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-secondary/30 transition-colors"
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    {getStatusIcon(status)}
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium text-foreground">{provider.name}</span>
+                        {provider.isPrimary && (
+                          <Badge variant="outline" className="text-xs">Primary</Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                        <span className="capitalize">{provider.type}</span>
+                        <Circle className="w-1 h-1 fill-current" />
+                        <span>Last check: {formatLastCheck(provider.lastCheck)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-6">
+                  <div className="text-right">
+                    <div className="text-sm font-medium text-foreground">
+                      {status === "down" ? "—" : `${provider.latency}ms`}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Latency</div>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="text-sm font-medium text-foreground">
+                      {provider.uptime?.toFixed(1) || "—"}%
+                    </div>
+                    <div className="text-xs text-muted-foreground">Uptime (24h)</div>
+                  </div>
+
+                  <Badge className={`${getStatusColor(status)} border`}>
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </Badge>
+
+                  <Button variant="ghost" size="icon">
+                    <Activity className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </Card>
   );

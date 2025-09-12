@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
 import AddProviderDialog from "@/components/AddProviderDialog";
-import { PROVIDERS } from "@/lib/apiResilienceManager";
+import { useProviders } from "@/hooks/useProviders";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,8 @@ import {
   CheckCircle,
   Plus,
   ExternalLink,
-  TrendingUp
+  TrendingUp,
+  Loader2
 } from "lucide-react";
 
 // --- Utility Functions (moved outside component to be accessible by modals) ---
@@ -68,6 +69,15 @@ const getTypeColor = (type: string) => {
 };
 
 const Providers = () => {
+  const { providers, loading, error, deleteProvider } = useProviders();
+  const [selectedProvider, setSelectedProvider] = useState(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+
+  const handleDeleteProvider = async (providerId: string) => {
+    if (confirm("Are you sure you want to delete this provider?")) {
+      await deleteProvider(providerId);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -110,64 +120,120 @@ const Providers = () => {
 
           {/* Main Content - Provider Cards */}
           <div className="lg:col-span-3">
+            {loading && (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <span className="ml-2 text-muted-foreground">Loading providers...</span>
+              </div>
+            )}
+
+            {error && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-4">
+                <p className="text-destructive">Error loading providers: {error}</p>
+              </div>
+            )}
+
+            {!loading && !error && providers.length === 0 && (
+              <div className="text-center py-12">
+                <Activity className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">No providers configured</h3>
+                <p className="text-muted-foreground mb-4">Add your first API provider to start monitoring</p>
+                <AddProviderDialog>
+                  <Button variant="cyber" className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    Add Your First Provider
+                  </Button>
+                </AddProviderDialog>
+              </div>
+            )}
+
             <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
-              {PROVIDERS.map((provider) => (
-                <Card key={provider.id} className="p-4 border border-border hover:border-primary/50 transition-colors">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(provider.isHealthy)}
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-foreground">{provider.name}</h3>
-                            {provider.isPrimary && (
-                              <Badge variant="outline" className="text-xs border-primary text-primary">
-                                Primary
+              {providers.map((provider) => {
+                const status = provider.isHealthy ? (provider.errorRate > 5 ? "degraded" : "healthy") : "down";
+                return (
+                  <Card key={provider._id} className="p-4 border border-border hover:border-primary/50 transition-colors">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(provider.isHealthy)}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-foreground">{provider.name}</h3>
+                              {provider.isPrimary && (
+                                <Badge variant="outline" className="text-xs border-primary text-primary">
+                                  Primary
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge className={`text-xs ${getTypeColor(provider.type)}`}>
+                                {provider.type.charAt(0).toUpperCase() + provider.type.slice(1)}
                               </Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge className={`text-xs ${getTypeColor(provider.type)}`}>
-                              {provider.type.charAt(0).toUpperCase() + provider.type.slice(1)}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              Last check: {provider.lastCheck}
-                            </span>
+                              <span className="text-xs text-muted-foreground">
+                                Last check: {new Date(provider.lastCheck).toLocaleString()}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
+
+                      <div className="flex items-center gap-3">
+                        {getStatusBadge(provider.isHealthy, provider.errorRate)}
+                        <Button variant="ghost" size="sm">
+                          <TrendingUp className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      {getStatusBadge(provider.isHealthy, provider.errorRate)}
-                      <Button variant="ghost" size="sm">
-                        <TrendingUp className="w-4 h-4" />
+                    <div className="grid grid-cols-3 gap-6 text-sm">
+                      <div>
+                        <p className="text-muted-foreground mb-1">Latency</p>
+                        <p className="text-foreground font-semibold">
+                          {provider.latency > 0 ? `${provider.latency}ms` : "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground mb-1">Uptime (24h)</p>
+                        <p className={`font-semibold ${getUptimeColor(provider.isHealthy, provider.errorRate)}`}>
+                          {provider.uptime?.toFixed(1) || calculateUptime(provider.errorRate)}%
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground mb-1">Error Rate</p>
+                        <p className={`font-semibold ${provider.errorRate > 1 ? 'text-error' : 'text-success'}`}>
+                          {provider.errorRate.toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-border">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(provider.endpoint, '_blank')}
+                      >
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Visit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedProvider(provider)}
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteProvider(provider._id!)}
+                      >
+                        Delete
                       </Button>
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-6 text-sm">
-                    <div>
-                      <p className="text-muted-foreground mb-1">Latency</p>
-                      <p className="text-foreground font-semibold">
-                        {provider.latency > 0 ? `${provider.latency}ms` : "—"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground mb-1">Uptime (24h)</p>
-                      <p className={`font-semibold ${getUptimeColor(provider.isHealthy, provider.errorRate)}`}>
-                        {calculateUptime(provider.errorRate)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground mb-1">Error Rate</p>
-                      <p className={`font-semibold ${provider.errorRate > 1 ? 'text-error' : 'text-success'}`}>
-                        {provider.errorRate.toFixed(1)}%
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           </div>
         </div>
