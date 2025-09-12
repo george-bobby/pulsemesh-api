@@ -1,0 +1,7 @@
+{
+	"framework": "vite",
+	"buildCommand": "npm ci && npm run build",
+	"env": {
+		"ROLLUP_NO_NATIVE": "1"
+	}
+}
