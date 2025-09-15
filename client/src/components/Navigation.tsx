@@ -13,6 +13,7 @@ import {
   X,
   ShieldAlert,
 } from "lucide-react";
+import { GoShieldCheck } from "react-icons/go";
 import { UserButton } from "@clerk/clerk-react";
 import { Authenticated, Unauthenticated } from "convex/react";
 import RealTimeStatus from "./RealTimeStatus";
@@ -62,9 +63,10 @@ const Navigation = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-cyber rounded-lg flex items-center justify-center shadow-glow">
-              <Shield className="w-6 h-6 text-foreground" />
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+              <GoShieldCheck size={25} />
             </div>
+
             <div>
               <h1 className="text-xl font-bold text-foreground">PulseMesh</h1>
               {/* <p className="text-xs text-muted-foreground">
