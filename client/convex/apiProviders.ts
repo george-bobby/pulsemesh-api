@@ -16,11 +16,7 @@ export const create = mutation({
     userId: v.string(),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (identity === null) {
-      throw new Error("Not authenticated");
-    }
-
+    // Server-side functions don't require authentication for internal operations
     return await ctx.db.insert("apiProviders", {
       name: args.name,
       type: args.type,
@@ -40,11 +36,6 @@ export const create = mutation({
 export const get = query({
   args: { id: v.id("apiProviders") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (identity === null) {
-      throw new Error("Not authenticated");
-    }
-
     return await ctx.db.get(args.id);
   },
 });
@@ -53,11 +44,6 @@ export const get = query({
 export const getByUser = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (identity === null) {
-      throw new Error("Not authenticated");
-    }
-
     return await ctx.db
       .query("apiProviders")
       .filter((q) => q.eq(q.field("userId"), args.userId))
@@ -69,11 +55,6 @@ export const getByUser = query({
 export const getAll = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (identity === null) {
-      throw new Error("Not authenticated");
-    }
-
     return await ctx.db.query("apiProviders").collect();
   },
 });
@@ -93,11 +74,6 @@ export const update = mutation({
     lastCheck: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (identity === null) {
-      throw new Error("Not authenticated");
-    }
-
     const { id, ...updates } = args;
     
     // Remove undefined values
@@ -139,20 +115,15 @@ export const updateHealth = mutation({
 export const deleteProvider = mutation({
   args: { id: v.id("apiProviders") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (identity === null) {
-      throw new Error("Not authenticated");
-    }
-
     await ctx.db.delete(args.id);
   },
 });
 
-// Get providers that need health checks
+// Get providers that need health checks (server-specific)
 export const getProvidersForHealthCheck = query({
   args: {},
   handler: async (ctx) => {
-    // This can be called without authentication for background monitoring
+    // This is specifically for server-side monitoring
     return await ctx.db.query("apiProviders").collect();
   },
 });

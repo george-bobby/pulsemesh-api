@@ -16,6 +16,7 @@ import type {
 import type * as apiProviders from "../apiProviders.js";
 import type * as healthChecks from "../healthChecks.js";
 import type * as messages from "../messages.js";
+import type * as userProfiles from "../userProfiles.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -29,6 +30,7 @@ declare const fullApi: ApiFromModules<{
   apiProviders: typeof apiProviders;
   healthChecks: typeof healthChecks;
   messages: typeof messages;
+  userProfiles: typeof userProfiles;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,
