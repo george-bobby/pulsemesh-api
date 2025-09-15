@@ -6,10 +6,12 @@ import {
   Shield,
   Settings,
   BarChart3,
+  Brain,
   Bell,
   User,
   Menu,
   X,
+  ShieldAlert,
 } from "lucide-react";
 import { UserButton } from "@clerk/clerk-react";
 import { Authenticated, Unauthenticated } from "convex/react";
@@ -32,6 +34,16 @@ const Navigation = () => {
       icon: BarChart3,
       label: "Analytics",
       href: "/analytics",
+    },
+    {
+      icon: Brain,
+      label: "Predictive",
+      href: "/predictive",
+    },
+    {
+      icon: ShieldAlert,
+      label: "Fallback",
+      href: "/fallback",
     },
     {
       icon: Bell,

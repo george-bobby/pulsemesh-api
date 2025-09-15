@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -356,19 +356,27 @@ const ProviderSettingsInline = () => {
 // --- Provider Management Modal ---
 const DemoManageModal = () => {
   const [open, setOpen] = useState(false);
-  const [providers, setProviders] = useState(PROVIDERS);
+  const { providers: hookProviders, loading } = useProviders();
+  const [providers, setProviders] = useState<typeof hookProviders>([]);
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
+
+  // Update local providers state when hook providers change
+  useEffect(() => {
+    if (hookProviders && hookProviders.length > 0) {
+      setProviders(hookProviders);
+    }
+  }, [hookProviders]);
 
   const handleToggleProvider = (id: string) => {
     setProviders(prev => prev.map(p =>
-      p.id === id ? { ...p, isHealthy: !p.isHealthy } : p
+      p._id === id ? { ...p, isHealthy: !p.isHealthy } : p
     ));
   };
 
   const handleSetPrimary = (id: string) => {
     setProviders(prev => prev.map(p => ({
       ...p,
-      isPrimary: p.id === id
+      isPrimary: p._id === id
     })));
   };
 
@@ -378,7 +386,7 @@ const DemoManageModal = () => {
     setTimeout(() => {
       console.log(`Testing provider ${id}...`);
       setProviders(prev => prev.map(p =>
-        p.id === id ? {
+        p._id === id ? {
           ...p,
           latency: Math.floor(Math.random() * 200) + 50,
           lastCheck: new Date().toLocaleTimeString()
@@ -431,7 +439,7 @@ const DemoManageModal = () => {
           {/* Provider List */}
           <div className="space-y-3 overflow-y-auto flex-1 pr-2">
             {providers.map((provider) => (
-              <Card key={provider.id} className="p-4">
+              <Card key={provider._id} className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     {getStatusIcon(provider.isHealthy)}
@@ -458,10 +466,10 @@ const DemoManageModal = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleTestProvider(provider.id)}
-                      disabled={selectedProvider === provider.id}
+                      onClick={() => handleTestProvider(provider._id!)}
+                      disabled={selectedProvider === provider._id}
                     >
-                      {selectedProvider === provider.id ? (
+                      {selectedProvider === provider._id ? (
                         <>
                           <Activity className="w-4 h-4 mr-1 animate-spin" />
                           Testing...
@@ -477,7 +485,7 @@ const DemoManageModal = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleSetPrimary(provider.id)}
+                      onClick={() => handleSetPrimary(provider._id!)}
                       disabled={provider.isPrimary}
                     >
                       <Shield className="w-4 h-4 mr-1" />
@@ -487,7 +495,7 @@ const DemoManageModal = () => {
                     <Button
                       variant={provider.isHealthy ? "destructive" : "default"}
                       size="sm"
-                      onClick={() => handleToggleProvider(provider.id)}
+                      onClick={() => handleToggleProvider(provider._id!)}
                     >
                       {provider.isHealthy ? "Disable" : "Enable"}
                     </Button>

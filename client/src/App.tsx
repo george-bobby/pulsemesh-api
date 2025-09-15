@@ -12,6 +12,8 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import RootRedirect from "./components/RootRedirect";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Predictive from "./pages/Predictive";
+import Fallback from "./pages/Fallback";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +39,16 @@ const App = () => (
           <Route path="/analytics" element={
             <ProtectedRoute>
               <Analytics />
+            </ProtectedRoute>
+          } />
+          <Route path="/predictive" element={
+            <ProtectedRoute>
+              <Predictive />
+            </ProtectedRoute>
+          } />
+          <Route path="/fallback" element={
+            <ProtectedRoute>
+              <Fallback />
             </ProtectedRoute>
           } />
           <Route path="/alerts" element={
