@@ -26,6 +26,20 @@ interface AlertCenterProps {
 }
 
 const AlertCenter = ({ providers = [] }: AlertCenterProps) => {
+  const getTimeAgo = (timestamp: string): string => {
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diffMs = now.getTime() - time.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} min ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  };
+
   // Generate alerts from real provider data
   const alerts: Alert[] = providers.flatMap((provider) => {
     const alerts: Alert[] = [];
@@ -68,20 +82,6 @@ const AlertCenter = ({ providers = [] }: AlertCenterProps) => {
 
     return alerts;
   });
-
-  const getTimeAgo = (timestamp: string): string => {
-    const now = new Date();
-    const time = new Date(timestamp);
-    const diffMs = now.getTime() - time.getTime();
-    const diffMins = Math.floor(diffMs / (1000 * 60));
-
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins} min ago`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    const diffDays = Math.floor(diffHours / 24);
-    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-  };
 
   const getSeverityIcon = (severity: Alert["severity"]) => {
     switch (severity) {
