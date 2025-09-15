@@ -1,11 +1,9 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react-swc';
+import react from '@vitejs/plugin-react';
 import path from 'path';
 
 // Force Rollup to use JavaScript fallback instead of native bindings
 process.env.ROLLUP_NO_NATIVE = '1';
-// Additional SWC configuration for Vercel compatibility
-process.env.SWC_NODE_PROJECT = './tsconfig.json';
 
 // https://vitejs.dev/config/
 export default defineConfig(() => ({
@@ -13,20 +11,7 @@ export default defineConfig(() => ({
 		host: '::',
 		port: 8080,
 	},
-	plugins: [
-		react({
-			// Configure SWC to avoid native binding issues on Vercel
-			swcOptions: {
-				jsc: {
-					target: 'es2020',
-					parser: {
-						syntax: 'typescript',
-						tsx: true,
-					},
-				},
-			},
-		}),
-	],
+	plugins: [react()],
 	resolve: {
 		alias: {
 			'@': path.resolve(__dirname, './src'),
