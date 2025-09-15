@@ -218,7 +218,7 @@ export class CircuitBreaker extends EventEmitter {
   }
 }
 
-export class CircuitBreakerService {
+export class CircuitBreakerService extends EventEmitter {
   private circuitBreakers = new Map<string, CircuitBreaker>();
   private defaultConfig: CircuitBreakerConfig = {
     failureThreshold: 5,
@@ -227,6 +227,10 @@ export class CircuitBreakerService {
     timeout: 30000, // 30 seconds
     monitoringPeriod: 300000 // 5 minutes
   };
+
+  constructor() {
+    super();
+  }
 
   getOrCreateCircuitBreaker(
     name: string, 
@@ -239,14 +243,20 @@ export class CircuitBreakerService {
       // Set up event listeners for logging and metrics
       circuitBreaker.on('stateChanged', (event) => {
         console.log(`Circuit breaker ${event.name} state changed to ${event.state}`);
+        // Emit the event at the service level for other services to listen
+        this.emit('stateChanged', event);
       });
       
       circuitBreaker.on('callFailed', (event) => {
         console.log(`Circuit breaker ${event.name} call failed. Failure count: ${event.failureCount}`);
+        // Emit the event at the service level for other services to listen
+        this.emit('callFailed', event);
       });
       
       circuitBreaker.on('callRejected', (event) => {
         console.log(`Circuit breaker ${event.name} rejected call: ${event.reason}`);
+        // Emit the event at the service level for other services to listen
+        this.emit('callRejected', event);
       });
 
       this.circuitBreakers.set(name, circuitBreaker);

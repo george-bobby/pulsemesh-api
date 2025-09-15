@@ -67,9 +67,9 @@ const Navigation = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-foreground">PulseMesh</h1>
-              <p className="text-xs text-muted-foreground">
+              {/* <p className="text-xs text-muted-foreground">
                 Intelligent Middleware Platform
-              </p>
+              </p> */}
             </div>
           </div>
 
