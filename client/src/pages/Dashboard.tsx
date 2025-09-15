@@ -10,6 +10,7 @@ import AIResilienceEngine from "@/components/AIResilienceEngine";
 import LiveApiTester from "@/components/LiveApiTester";
 import UserProfile from "@/components/UserProfile";
 import TestMessages from "@/components/TestMessages";
+
 import { useProviders } from "@/hooks/useProviders";
 import {
   Activity,
@@ -38,17 +39,24 @@ const Index = () => {
       };
     }
 
-    const healthyCount = providers.filter(p => p.isHealthy).length;
-    const avgLatency = providers.reduce((sum, p) => sum + p.latency, 0) / providers.length;
-    const avgSuccessRate = providers.reduce((sum, p) => sum + (p.successRate || 0), 0) / providers.length;
-    const systemUptime = providers.reduce((sum, p) => sum + (p.uptime || 0), 0) / providers.length;
+    const healthyCount = providers.filter((p) => p.isHealthy).length;
+    const avgLatency =
+      providers.reduce((sum, p) => sum + p.latency, 0) / providers.length;
+    const avgSuccessRate =
+      providers.reduce((sum, p) => sum + (p.successRate || 0), 0) /
+      providers.length;
+    const systemUptime =
+      providers.reduce((sum, p) => sum + (p.uptime || 0), 0) / providers.length;
 
     return {
       totalProviders: providers.length,
       healthyProviders: healthyCount,
       avgLatency: Math.round(avgLatency),
       systemUptime: Math.round(systemUptime),
-      totalRequests: providers.reduce((sum, p) => sum + (p.totalRequests || 0), 0),
+      totalRequests: providers.reduce(
+        (sum, p) => sum + (p.totalRequests || 0),
+        0
+      ),
       successRate: Math.round(avgSuccessRate),
     };
   }, [providers]);
@@ -58,7 +66,10 @@ const Index = () => {
     const now = new Date();
     return Array.from({ length: 10 }, (_, i) => {
       const time = new Date(now.getTime() - (9 - i) * 15 * 60 * 1000);
-      const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      const timeStr = time.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
       // Simulate some variation around current average latency
       const baseLatency = metrics.avgLatency || 120;
       const variation = (Math.random() - 0.5) * 40;
@@ -73,7 +84,10 @@ const Index = () => {
     const now = new Date();
     return Array.from({ length: 10 }, (_, i) => {
       const time = new Date(now.getTime() - (9 - i) * 15 * 60 * 1000);
-      const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      const timeStr = time.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
       // Simulate request volume based on number of providers
       const baseVolume = providers.length * 200;
       const variation = (Math.random() - 0.5) * baseVolume * 0.3;
@@ -88,11 +102,16 @@ const Index = () => {
     const now = new Date();
     return Array.from({ length: 10 }, (_, i) => {
       const time = new Date(now.getTime() - (9 - i) * 15 * 60 * 1000);
-      const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      const timeStr = time.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
       // Calculate average error rate from providers
-      const avgErrorRate = providers.length > 0
-        ? providers.reduce((sum, p) => sum + p.errorRate, 0) / providers.length
-        : 0;
+      const avgErrorRate =
+        providers.length > 0
+          ? providers.reduce((sum, p) => sum + p.errorRate, 0) /
+            providers.length
+          : 0;
       const variation = (Math.random() - 0.5) * 0.5;
       return {
         time: timeStr,
@@ -105,13 +124,19 @@ const Index = () => {
     const now = new Date();
     return Array.from({ length: 10 }, (_, i) => {
       const time = new Date(now.getTime() - (9 - i) * 15 * 60 * 1000);
-      const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      const timeStr = time.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
       // Use system uptime with some variation
       const baseUptime = metrics.systemUptime || 99;
       const variation = (Math.random() - 0.5) * 2;
       return {
         time: timeStr,
-        value: Math.max(95, Math.min(100, Number((baseUptime + variation).toFixed(1)))),
+        value: Math.max(
+          95,
+          Math.min(100, Number((baseUptime + variation).toFixed(1)))
+        ),
       };
     });
   }, [metrics.systemUptime]);
@@ -128,7 +153,8 @@ const Index = () => {
               API Resilience Hub
             </h1>
             <p className="text-muted-foreground">
-              Intelligent middleware platform for API monitoring, failover, and resilience
+              Intelligent middleware platform for API monitoring, failover, and
+              resilience
             </p>
           </div>
           {/* <div className="lg:w-80">
@@ -159,7 +185,13 @@ const Index = () => {
             title="System Health"
             value={`${metrics.systemUptime}%`}
             subtitle="Uptime"
-            status={metrics.systemUptime >= 99 ? "success" : metrics.systemUptime >= 95 ? "warning" : "error"}
+            status={
+              metrics.systemUptime >= 99
+                ? "success"
+                : metrics.systemUptime >= 95
+                  ? "warning"
+                  : "error"
+            }
             trend={metrics.systemUptime >= 99 ? "up" : "down"}
             trendValue={metrics.systemUptime >= 99 ? "+0.2%" : "-0.5%"}
             icon={<Shield className="w-4 h-4" />}
@@ -169,7 +201,11 @@ const Index = () => {
             title="Active Providers"
             value={`${metrics.healthyProviders}/${metrics.totalProviders}`}
             subtitle="Online"
-            status={metrics.healthyProviders === metrics.totalProviders ? "success" : "warning"}
+            status={
+              metrics.healthyProviders === metrics.totalProviders
+                ? "success"
+                : "warning"
+            }
             trend="stable"
             trendValue={`${metrics.totalProviders - metrics.healthyProviders} degraded`}
             icon={<Database className="w-4 h-4" />}
@@ -179,7 +215,13 @@ const Index = () => {
             title="Avg Response Time"
             value={`${metrics.avgLatency}ms`}
             subtitle="Last 15min"
-            status={metrics.avgLatency <= 200 ? "success" : metrics.avgLatency <= 500 ? "warning" : "error"}
+            status={
+              metrics.avgLatency <= 200
+                ? "success"
+                : metrics.avgLatency <= 500
+                  ? "warning"
+                  : "error"
+            }
             trend={metrics.avgLatency <= 200 ? "down" : "up"}
             trendValue={metrics.avgLatency <= 200 ? "-8ms" : "+15ms"}
             icon={<Clock className="w-4 h-4" />}
@@ -189,7 +231,13 @@ const Index = () => {
             title="Success Rate"
             value={`${metrics.successRate}%`}
             subtitle="Last hour"
-            status={metrics.successRate >= 99 ? "success" : metrics.successRate >= 95 ? "warning" : "error"}
+            status={
+              metrics.successRate >= 99
+                ? "success"
+                : metrics.successRate >= 95
+                  ? "warning"
+                  : "error"
+            }
             trend={metrics.successRate >= 99 ? "up" : "down"}
             trendValue={metrics.successRate >= 99 ? "+0.5%" : "-2%"}
             icon={<Activity className="w-4 h-4" />}
@@ -275,7 +323,7 @@ const Index = () => {
 
           <TabsContent value="providers" className="space-y-6">
             <ProviderStatus providers={providers} />
-            <CircuitBreakerPanel providers={providers} />
+            <CircuitBreakerPanel />
           </TabsContent>
 
           <TabsContent value="auth-test" className="space-y-6">

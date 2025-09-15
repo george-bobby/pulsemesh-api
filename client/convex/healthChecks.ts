@@ -1,7 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
-// Create a new health check result
+// Create a new health check result (server-side)
 export const create = mutation({
   args: {
     providerId: v.id("apiProviders"),
@@ -13,6 +13,7 @@ export const create = mutation({
     responseTime: v.number(),
   },
   handler: async (ctx, args) => {
+    // Server can create health checks without authentication
     return await ctx.db.insert("healthChecks", {
       providerId: args.providerId,
       timestamp: args.timestamp,
@@ -25,18 +26,13 @@ export const create = mutation({
   },
 });
 
-// Get health check history for a specific provider
+// Get health check history for a specific provider (server-side)
 export const getHistory = query({
   args: { 
     providerId: v.id("apiProviders"),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (identity === null) {
-      throw new Error("Not authenticated");
-    }
-
     const limit = args.limit || 100;
     
     return await ctx.db
@@ -47,18 +43,13 @@ export const getHistory = query({
   },
 });
 
-// Get recent health checks across all providers
+// Get recent health checks across all providers (server-side)
 export const getRecentChecks = query({
   args: { 
     limit: v.optional(v.number()),
     since: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (identity === null) {
-      throw new Error("Not authenticated");
-    }
-
     const limit = args.limit || 50;
     let query = ctx.db.query("healthChecks").order("desc");
     
@@ -70,18 +61,13 @@ export const getRecentChecks = query({
   },
 });
 
-// Get health statistics for a provider
+// Get health statistics for a provider (server-side)
 export const getStats = query({
   args: { 
     providerId: v.id("apiProviders"),
     since: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (identity === null) {
-      throw new Error("Not authenticated");
-    }
-
     let query = ctx.db
       .query("healthChecks")
       .filter((q) => q.eq(q.field("providerId"), args.providerId));
@@ -120,7 +106,7 @@ export const getStats = query({
   },
 });
 
-// Clean up old health check records
+// Clean up old health check records (server-side)
 export const cleanup = mutation({
   args: { 
     olderThan: v.number(), // timestamp
