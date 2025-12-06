@@ -68,6 +68,7 @@ export const getLatestForAllProviders = query({
     // Get all health checks ordered by timestamp desc
     const allChecks = await ctx.db
       .query("healthChecks")
+      .withIndex("by_timestamp", (q) => q)
       .order("desc")
       .collect();
     

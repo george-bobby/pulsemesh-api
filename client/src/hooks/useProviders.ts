@@ -51,21 +51,38 @@ export const useProviders = () => {
       const providersWithMetrics: ProviderWithMetrics[] = convexProviders.map(provider => {
         const latestCheck = healthCheckMap.get(provider._id);
         
+        // Debug logging
+        if (latestCheck) {
+          console.log(`[${provider.name}] Health check:`, {
+            status: latestCheck.status,
+            isHealthy: latestCheck.isHealthy,
+            statusCode: latestCheck.statusCode,
+            errorMessage: latestCheck.errorMessage
+          });
+        }
+        
         // Determine status: prioritize health check status, then use intelligent fallback
         let status: 'healthy' | 'degraded' | 'down' = 'healthy';
         if (latestCheck?.status) {
           // Use status from latest health check if available
           status = latestCheck.status;
+        } else if (latestCheck) {
+          // If we have a health check but no status field, determine from statusCode
+          if (latestCheck.isHealthy) {
+            status = 'healthy';
+          } else if (latestCheck.statusCode !== undefined) {
+            // If we have a statusCode, endpoint was reachable but returning errors (degraded)
+            status = 'degraded';
+          } else {
+            // No statusCode means network error (down)
+            status = 'down';
+          }
         } else if (provider.isHealthy) {
+          // Fallback: if no health check data, use provider's isHealthy
           status = 'healthy';
         } else {
-          // If unhealthy but we have a statusCode, it means endpoint was reachable (degraded)
-          // If no statusCode, it means network error (down)
-          if (latestCheck?.statusCode !== undefined) {
-            status = 'degraded'; // Endpoint reachable but returning errors
-          } else {
-            status = 'down'; // Network error, completely unreachable
-          }
+          // No health check and provider is unhealthy = down
+          status = 'down';
         }
         
         return {

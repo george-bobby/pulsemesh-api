@@ -267,8 +267,13 @@ export class MonitoringService {
 			// 4xx (client errors like 404, 401) and 5xx (server errors) are unhealthy
 			const isHealthy = response.status >= 200 && response.status < 400;
 			let errorMessage: string | undefined;
+			let status: 'healthy' | 'degraded' | 'down';
 
-			if (!isHealthy) {
+			if (isHealthy) {
+				status = 'healthy';
+			} else {
+				// Provider is reachable but returning errors - this is degraded
+				status = 'degraded';
 				if (response.status >= 400 && response.status < 500) {
 					errorMessage = `Client error: ${response.status} ${response.statusText}`;
 				} else if (response.status >= 500) {
@@ -277,7 +282,7 @@ export class MonitoringService {
 			}
 
 			console.log(
-				`Health check for ${provider.name}: ${response.status} in ${responseTime}ms - ${isHealthy ? 'healthy' : 'unhealthy'}`
+				`Health check for ${provider.name}: ${response.status} in ${responseTime}ms - ${status}`
 			);
 
 			return {
@@ -288,6 +293,7 @@ export class MonitoringService {
 				statusCode: response.status,
 				responseTime,
 				errorMessage,
+				status,
 			};
 		} catch (error) {
 			const endTime = Date.now();
@@ -313,12 +319,16 @@ export class MonitoringService {
 				errorCode || errorMessage
 			);
 
-			// Determine if this is a network error or API error
+			// Determine if this is a network error (down) or API error (degraded)
 			const isNetworkError =
 				errorCode === 'ECONNREFUSED' ||
 				errorCode === 'ENOTFOUND' ||
 				errorCode === 'ETIMEDOUT' ||
 				errorName === 'AbortError';
+
+			// Network errors mean completely unreachable (down)
+			// API errors mean reachable but unhealthy (degraded)
+			const status: 'healthy' | 'degraded' | 'down' = isNetworkError ? 'down' : 'degraded';
 
 			return {
 				providerId: provider._id!,
@@ -330,6 +340,7 @@ export class MonitoringService {
 					? `Network error: ${errorCode || 'Connection failed'}`
 					: errorMessage,
 				statusCode,
+				status,
 			};
 		}
 	}
@@ -400,7 +411,7 @@ export class MonitoringService {
 	// Self-healing integration methods
 	private async checkProviderHealthWithSelfHealing(
 		provider: ApiProvider
-	): Promise<void> {
+	): Promise<HealthCheckResult> {
 		try {
 			// Use self-healing service for health checks
 			const result = await selfHealingService.executeWithSelfHealing(
@@ -415,21 +426,25 @@ export class MonitoringService {
 				}
 			);
 
-			// Create health check result based on self-healing result
-			const healthResult: HealthCheckResult = {
+			// Extract the actual health check result from self-healing result
+			const actualHealthCheck = result.result as HealthCheckResult | undefined;
+			
+			// Use the actual health check result if available, otherwise create error result
+			const healthResult: HealthCheckResult = actualHealthCheck || {
 				providerId: provider._id!,
 				timestamp: Date.now(),
-				isHealthy: result.success,
+				isHealthy: false,
 				latency: result.totalLatency,
 				responseTime: result.totalLatency,
-				errorMessage: result.success ? undefined : 'Self-healing failed',
+				errorMessage: 'Health check failed: no result returned',
+				status: 'down',
 			};
 
-			// Store result and update provider health
+			// Store result and update provider health using actual health check result
 			await convexService.createHealthCheckResult(healthResult);
 			await convexService.updateProviderHealth(provider._id!, {
-				isHealthy: result.success,
-				latency: result.totalLatency,
+				isHealthy: healthResult.isHealthy,
+				latency: healthResult.latency,
 				lastCheck: new Date().toISOString(),
 			});
 
@@ -440,11 +455,13 @@ export class MonitoringService {
 					providerId: provider._id!,
 					providerName: provider.name,
 					action: `Health check with actions: ${result.actionsPerformed.join(', ')}`,
-					status: result.success ? 'success' : 'failed',
+					status: healthResult.isHealthy ? 'success' : 'failed',
 					timestamp: Date.now(),
 					details: result,
 				});
 			}
+
+			return healthResult;
 		} catch (error) {
 			console.error(
 				`Self-healing health check failed for provider ${provider.name}:`,
@@ -452,7 +469,7 @@ export class MonitoringService {
 			);
 
 			// Fallback to regular health check
-			await this.checkProviderHealth(provider);
+			return await this.checkProviderHealth(provider);
 		}
 	}
 
