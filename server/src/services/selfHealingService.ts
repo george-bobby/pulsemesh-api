@@ -331,10 +331,17 @@ export class SelfHealingService extends EventEmitter {
   private async logCircuitBreakerMetrics(circuitBreaker: any, providerId: string): Promise<void> {
     try {
       const metrics = circuitBreaker.getMetrics();
+      // Convert null to undefined for optional fields (Convex doesn't accept null)
+      const cleanMetrics = {
+        ...metrics,
+        lastFailureTime: metrics.lastFailureTime ?? undefined,
+        lastSuccessTime: metrics.lastSuccessTime ?? undefined,
+        nextAttemptAt: metrics.nextAttemptAt ?? undefined,
+      };
       await convexService.client.mutation('selfHealingMetrics:createCircuitBreakerMetric', {
         providerId,
         name: circuitBreaker.name,
-        ...metrics
+        ...cleanMetrics
       });
     } catch (error) {
       console.error('Failed to log circuit breaker metrics:', error);

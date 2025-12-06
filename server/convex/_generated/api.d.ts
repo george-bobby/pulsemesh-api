@@ -16,6 +16,7 @@ import type {
 import type * as apiProviders from "../apiProviders.js";
 import type * as healthChecks from "../healthChecks.js";
 import type * as messages from "../messages.js";
+import type * as selfHealingMetrics from "../selfHealingMetrics.js";
 import type * as userProfiles from "../userProfiles.js";
 
 /**
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   apiProviders: typeof apiProviders;
   healthChecks: typeof healthChecks;
   messages: typeof messages;
+  selfHealingMetrics: typeof selfHealingMetrics;
   userProfiles: typeof userProfiles;
 }>;
 export declare const api: FilterApi<

@@ -57,7 +57,6 @@ const RealTimeStatus = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [activeRecoveries, setActiveRecoveries] = useState<Map<string, SelfHealingEvent>>(new Map());
   const { user } = useUser();
-  const { getToken } = useAuth();
   const { toast } = useToast();
 
   const handleSelfHealingEvent = (event: SelfHealingEvent) => {
@@ -104,26 +103,23 @@ const RealTimeStatus = () => {
   useEffect(() => {
     if (!user?.id) return;
 
-    const connectToStream = async () => {
-      try {
-        // Get auth token
-        const token = await getToken();
-        if (!token) {
-          console.warn("No auth token available for real-time monitoring");
-          return;
-        }
+    let isCleanedUp = false;
 
-        // Only connect in production or if the backend is running
+    const connectToStream = async () => {
+      if (isCleanedUp) return;
+
+      try {
+        // No auth required - public API
         const backendUrl =
           import.meta.env.VITE_API_BASE_URL || "http://localhost:3004";
-        const streamUrl = `${backendUrl}/api/monitoring/stream/${user.id}?token=${encodeURIComponent(token)}`;
+        const streamUrl = `${backendUrl}/api/monitoring/stream/${user.id}`;
 
-        console.log("Attempting to connect to real-time monitoring:", streamUrl);
+        console.log("🔌 Attempting to connect to real-time monitoring:", streamUrl);
 
         const source = new EventSource(streamUrl);
 
         source.onopen = () => {
-          console.log("Real-time monitoring connected");
+          console.log("✅ Real-time monitoring SSE connection opened");
           setIsConnected(true);
           setLastUpdate(new Date());
         };
@@ -131,10 +127,18 @@ const RealTimeStatus = () => {
         source.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
-            console.log("Received update:", data);
+            console.log("📨 Received SSE update:", data);
+
+            // Mark as connected when we receive any message
+            setIsConnected(true);
+            setLastUpdate(new Date());
 
             if (data.type === "health_update") {
               setLastUpdate(new Date());
+              console.log("💓 Health update received:", {
+                providers: data.providers,
+                recentChecks: data.recentChecks?.length
+              });
 
               // Show toast for critical updates
               const criticalChecks = data.recentChecks?.filter(
@@ -162,7 +166,8 @@ const RealTimeStatus = () => {
         };
 
         source.onerror = (error) => {
-          console.warn("Real-time monitoring connection error:", error);
+          console.error("❌ Real-time monitoring SSE error:", error);
+          console.error("EventSource readyState:", source.readyState);
           setIsConnected(false);
           // Don't show error toast for connection issues to avoid spam
         };
@@ -171,19 +176,29 @@ const RealTimeStatus = () => {
 
         // Cleanup on unmount
         return () => {
-          console.log("Cleaning up real-time monitoring connection");
+          isCleanedUp = true;
+          console.log("🔌 Cleaning up real-time monitoring connection");
           source.close();
           setEventSource(null);
           setIsConnected(false);
         };
       } catch (error) {
-        console.error("Failed to connect to real-time monitoring:", error);
+        console.error("❌ Failed to connect to real-time monitoring:", error);
         setIsConnected(false);
       }
     };
 
     connectToStream();
-  }, [user?.id, getToken, toast]);
+
+    return () => {
+      isCleanedUp = true;
+      if (eventSource) {
+        console.log("🔌 Component unmounting - closing EventSource");
+        eventSource.close();
+        setEventSource(null);
+      }
+    };
+  }, [user?.id, toast]);
 
   // Don't render if we don't have a user or if the feature is disabled
   if (!user?.id) return null;

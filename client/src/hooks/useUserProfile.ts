@@ -1,6 +1,6 @@
 import { useUser } from "@clerk/clerk-react";
 import { useMutation, useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
+import { api } from "../types/convex";
 
 export function useUserProfile() {
   const { user } = useUser();

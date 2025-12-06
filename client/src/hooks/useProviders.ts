@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { useUser } from '@clerk/clerk-react';
-import { api } from '../../convex/_generated/api';
+import { api, type Id } from '../types/convex';
 import { useApiService, ApiProvider } from '../services/apiService';
-import { Id } from '../../convex/_generated/dataModel';
 
 export interface ProviderWithMetrics extends ApiProvider {
   uptime?: number;
@@ -65,19 +64,20 @@ export const useProviders = () => {
     }
   }, [user?.id, convexProviders]);
 
-  // Refresh data from backend (for latest health status)
+  // Refresh data from Convex
+  // With Single Convex Architecture, Convex subscriptions provide real-time updates
+  // This function is kept for manual refresh if needed
   const refreshFromBackend = useCallback(async () => {
     if (!user?.id) return;
 
-    try {
-      // This will trigger the backend to sync any new health check data
-      await apiService.checkServerHealth();
-    } catch (err) {
-      console.warn('Backend refresh failed:', err);
-    }
-  }, [user?.id, apiService]);
+    // Convex subscriptions automatically update when data changes
+    // This is a no-op but kept for API compatibility
+    fetchProviders();
+  }, [user?.id, fetchProviders]);
 
   // Create a new provider
+  // Using Single Convex Architecture: Convex is the single source of truth
+  // Server monitoring service will automatically pick up new providers from Convex
   const createProvider = useCallback(async (
     providerData: Omit<ApiProvider, '_id' | 'userId' | 'lastCheck'>
   ): Promise<string | null> => {
@@ -86,72 +86,61 @@ export const useProviders = () => {
     }
 
     try {
-      // Create in Convex first (primary database)
+      // Create in Convex (single source of truth)
+      // Server monitoring service reads from the same Convex database
       const convexId = await createProviderMutation({
         ...providerData,
         userId: user.id,
         lastCheck: new Date().toISOString(),
       });
 
-      // Notify backend about new provider (backend will pick it up from Convex)
-      try {
-        await apiService.createProvider(providerData);
-      } catch (backendError) {
-        console.warn('Backend notification failed, but provider created in Convex:', backendError);
+      if (!convexId) {
+        throw new Error('Failed to create provider: No ID returned');
       }
 
       return convexId;
     } catch (err) {
       console.error('Error creating provider:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create provider');
       throw err;
     }
-  }, [user?.id, createProviderMutation, apiService]);
+  }, [user?.id, createProviderMutation]);
 
   // Update a provider
+  // Using Single Convex Architecture: Convex is the single source of truth
   const updateProvider = useCallback(async (
     id: string,
     updates: Partial<ApiProvider>
   ): Promise<boolean> => {
     try {
-      // Update in Convex first
+      // Update in Convex (single source of truth)
       await updateProviderMutation({
         id: id as Id<"apiProviders">,
         ...updates,
       });
 
-      // Notify backend
-      try {
-        await apiService.updateProvider(id, updates);
-      } catch (backendError) {
-        console.warn('Backend update failed, but provider updated in Convex:', backendError);
-      }
-
       return true;
     } catch (err) {
       console.error('Error updating provider:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update provider');
       return false;
     }
-  }, [updateProviderMutation, apiService]);
+  }, [updateProviderMutation]);
 
   // Delete a provider
+  // Using Single Convex Architecture: Convex is the single source of truth
   const deleteProvider = useCallback(async (id: string): Promise<boolean> => {
     try {
-      // Delete from Convex first
+      // Delete from Convex (single source of truth)
       await deleteProviderMutation({ id: id as Id<"apiProviders"> });
-
-      // Notify backend
-      try {
-        await apiService.deleteProvider(id);
-      } catch (backendError) {
-        console.warn('Backend deletion failed, but provider deleted from Convex:', backendError);
-      }
 
       return true;
     } catch (err) {
       console.error('Error deleting provider:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete provider');
       return false;
     }
-  }, [deleteProviderMutation, apiService]);
+  }, [deleteProviderMutation]);
 
   // Get health history for a provider
   const getHealthHistory = useCallback(async (providerId: string) => {

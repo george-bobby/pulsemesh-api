@@ -18,24 +18,17 @@ const getStatusCode = (error: unknown): ContentfulStatusCode => {
 	return 500;
 };
 
-// Apply authentication middleware to all routes except stream (which handles auth manually)
-monitoring.use('*', async (c, next) => {
-	// Skip auth middleware for stream endpoint as it handles auth via query params
-	if (c.req.path.includes('/stream/')) {
-		await next();
-	} else {
-		await authMiddleware(c, next);
-	}
-});
+// Apply authentication middleware to provider-specific endpoints
+// Public endpoints (status, stream) are defined separately below
 
-// Get health check history for a provider
-monitoring.get('/providers/:id/history', async (c) => {
+// Get health check history for a provider (requires authentication)
+monitoring.get('/providers/:id/history', authMiddleware, async (c) => {
 	try {
 		const user = requireUser(c);
 		const providerId = c.req.param('id');
 		const limit = parseInt(c.req.query('limit') || '100');
 
-		// Check if user owns this provider
+		// Check if provider exists and user owns it
 		const provider = await convexService.getApiProvider(providerId);
 		if (!provider) {
 			const response: ApiResponse = {
@@ -46,6 +39,7 @@ monitoring.get('/providers/:id/history', async (c) => {
 			return c.json(response, 404);
 		}
 
+		// Verify user owns this provider
 		if (provider.userId !== user.userId) {
 			const response: ApiResponse = {
 				success: false,
@@ -83,8 +77,8 @@ monitoring.get('/providers/:id/history', async (c) => {
 	}
 });
 
-// Get health statistics for a provider
-monitoring.get('/providers/:id/stats', async (c) => {
+// Get health statistics for a provider (requires authentication)
+monitoring.get('/providers/:id/stats', authMiddleware, async (c) => {
 	try {
 		const user = requireUser(c);
 		const providerId = c.req.param('id');
@@ -92,7 +86,7 @@ monitoring.get('/providers/:id/stats', async (c) => {
 			? parseInt(c.req.query('since')!)
 			: undefined;
 
-		// Check if user owns this provider
+		// Check if provider exists and user owns it
 		const provider = await convexService.getApiProvider(providerId);
 		if (!provider) {
 			const response: ApiResponse = {
@@ -103,6 +97,7 @@ monitoring.get('/providers/:id/stats', async (c) => {
 			return c.json(response, 404);
 		}
 
+		// Verify user owns this provider
 		if (provider.userId !== user.userId) {
 			const response: ApiResponse = {
 				success: false,
@@ -146,13 +141,13 @@ monitoring.get('/providers/:id/stats', async (c) => {
 	}
 });
 
-// Manually trigger a health check for a provider
-monitoring.post('/providers/:id/check', async (c) => {
+// Manually trigger a health check for a provider (requires authentication)
+monitoring.post('/providers/:id/check', authMiddleware, async (c) => {
 	try {
 		const user = requireUser(c);
 		const providerId = c.req.param('id');
 
-		// Check if user owns this provider
+		// Check if provider exists and user owns it
 		const provider = await convexService.getApiProvider(providerId);
 		if (!provider) {
 			const response: ApiResponse = {
@@ -163,6 +158,7 @@ monitoring.post('/providers/:id/check', async (c) => {
 			return c.json(response, 404);
 		}
 
+		// Verify user owns this provider
 		if (provider.userId !== user.userId) {
 			const response: ApiResponse = {
 				success: false,
@@ -208,13 +204,13 @@ monitoring.post('/providers/:id/check', async (c) => {
 	}
 });
 
-// Get circuit breaker status for a provider
-monitoring.get('/providers/:id/circuit-breaker', async (c) => {
+// Get circuit breaker status for a provider (requires authentication)
+monitoring.get('/providers/:id/circuit-breaker', authMiddleware, async (c) => {
 	try {
 		const user = requireUser(c);
 		const providerId = c.req.param('id');
 
-		// Check if user owns this provider
+		// Check if provider exists and user owns it
 		const provider = await convexService.getApiProvider(providerId);
 		if (!provider) {
 			const response: ApiResponse = {
@@ -225,6 +221,7 @@ monitoring.get('/providers/:id/circuit-breaker', async (c) => {
 			return c.json(response, 404);
 		}
 
+		// Verify user owns this provider
 		if (provider.userId !== user.userId) {
 			const response: ApiResponse = {
 				success: false,
@@ -260,7 +257,7 @@ monitoring.get('/providers/:id/circuit-breaker', async (c) => {
 	}
 });
 
-// Get monitoring service status
+// Get monitoring service status (public endpoint - no auth required)
 monitoring.get('/status', async (c) => {
 	try {
 		const isRunning = monitoringService.getIsRunning();
@@ -288,67 +285,14 @@ monitoring.get('/status', async (c) => {
 	}
 });
 
-// Real-time monitoring stream (Server-Sent Events)
-monitoring.get('/stream/:userId', async (c) => {
+// Real-time monitoring stream (Server-Sent Events) - Requires authentication
+monitoring.get('/stream/:userId', authMiddleware, async (c) => {
 	try {
-		// Try to get user from auth middleware first, then fallback to query param
-		let user: any;
-		let jwtToken: string | null = null;
-
-		try {
-			user = requireUser(c);
-		} catch (authError) {
-			// If auth middleware failed, try to get token from query params
-			const token = c.req.query('token');
-			if (!token) {
-				const response: ApiResponse = {
-					success: false,
-					error: 'Authentication required - missing token',
-					timestamp: Date.now(),
-				};
-				return c.json(response, 401);
-			}
-
-			jwtToken = token; // Store the JWT token for Convex authentication
-
-			// Verify the token manually
-			const { verifyToken } = await import('@clerk/backend');
-			const { env } = await import('../config/env.js');
-
-			try {
-				const payload = await verifyToken(token, {
-					secretKey: env.CLERK_SECRET_KEY,
-					issuer: env.CLERK_JWT_ISSUER_DOMAIN,
-				});
-
-				if (!payload || !payload.sub) {
-					const response: ApiResponse = {
-						success: false,
-						error: 'Invalid token',
-						timestamp: Date.now(),
-					};
-					return c.json(response, 401);
-				}
-
-				user = {
-					userId: payload.sub,
-					email: (payload.email as string) || '',
-					name:
-						(payload.name as string) || (payload.given_name as string) || '',
-				};
-			} catch (tokenError) {
-				const response: ApiResponse = {
-					success: false,
-					error: 'Token verification failed',
-					timestamp: Date.now(),
-				};
-				return c.json(response, 401);
-			}
-		}
-
+		const user = requireUser(c);
 		const targetUserId = c.req.param('userId');
+		console.log('🔌 SSE Stream request received for userId:', targetUserId);
 
-		// Only allow users to stream their own data
+		// Verify user can only access their own stream
 		if (user.userId !== targetUserId) {
 			const response: ApiResponse = {
 				success: false,
@@ -357,6 +301,8 @@ monitoring.get('/stream/:userId', async (c) => {
 			};
 			return c.json(response, 403);
 		}
+
+		console.log('✅ Authenticated access granted for userId:', user.userId);
 
 		return stream(c, async (stream) => {
 			// Set SSE headers
@@ -373,12 +319,10 @@ monitoring.get('/stream/:userId', async (c) => {
 			// Set up interval to send updates every 30 seconds
 			const interval = setInterval(async () => {
 				try {
-					// Get user's providers (pass JWT token for authentication)
+					// Get user's providers
 					const providers = await convexService.getApiProvidersByUser(
-						user.userId,
-						jwtToken || undefined
+						user.userId
 					);
-
 					// Get recent health checks for all providers
 					const recentChecks = await convexService.getRecentHealthChecks(10);
 
@@ -399,19 +343,27 @@ monitoring.get('/stream/:userId', async (c) => {
 				}
 			}, 30000);
 
-			// Cleanup on disconnect
-			c.req.raw.signal.addEventListener('abort', () => {
-				clearInterval(interval);
-				console.log('Monitoring stream disconnected for user:', user.userId);
-			});
-
-			// Keep connection alive
+			// Keep connection alive with heartbeat every 15 seconds
 			const keepAlive = setInterval(async () => {
-				await stream.write(': keepalive\n\n');
+				try {
+					await stream.write(': keepalive\n\n');
+				} catch (error) {
+					console.error('Keepalive error:', error);
+					clearInterval(keepAlive);
+					clearInterval(interval);
+				}
 			}, 15000);
 
+			// Cleanup on disconnect
 			c.req.raw.signal.addEventListener('abort', () => {
+				console.log('🔌 Monitoring stream disconnected for user:', user.userId);
+				clearInterval(interval);
 				clearInterval(keepAlive);
+			});
+
+			// Keep the stream open indefinitely - wait for abort signal
+			await new Promise<void>((resolve) => {
+				c.req.raw.signal.addEventListener('abort', () => resolve());
 			});
 		});
 	} catch (error) {
@@ -427,13 +379,13 @@ monitoring.get('/stream/:userId', async (c) => {
 
 // Self-healing endpoints
 
-// Trigger self-healing for a specific provider
-monitoring.post('/providers/:id/self-heal', async (c) => {
+// Trigger self-healing for a specific provider (requires authentication)
+monitoring.post('/providers/:id/self-heal', authMiddleware, async (c) => {
 	try {
 		const user = requireUser(c);
 		const providerId = c.req.param('id');
 
-		// Check if user owns this provider
+		// Check if provider exists and user owns it
 		const provider = await convexService.getApiProvider(providerId);
 		if (!provider) {
 			const response: ApiResponse = {
@@ -444,6 +396,7 @@ monitoring.post('/providers/:id/self-heal', async (c) => {
 			return c.json(response, 404);
 		}
 
+		// Verify user owns this provider
 		if (provider.userId !== user.userId) {
 			const response: ApiResponse = {
 				success: false,
@@ -479,10 +432,10 @@ monitoring.post('/providers/:id/self-heal', async (c) => {
 	}
 });
 
-// Get self-healing status and statistics
-monitoring.get('/self-healing/status', async (c) => {
+// Get self-healing status and statistics (requires authentication)
+monitoring.get('/self-healing/status', authMiddleware, async (c) => {
 	try {
-		const user = requireUser(c);
+		requireUser(c); // Verify authentication
 
 		const status = await monitoringService.getSelfHealingStatus();
 

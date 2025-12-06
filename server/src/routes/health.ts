@@ -26,7 +26,10 @@ health.get('/detailed', async (c) => {
 		const timestamp = Date.now();
 
 		// Check monitoring service status
-		const monitoringHealthy = monitoringService.isRunning();
+		const monitoringHealthy = monitoringService.getIsRunning();
+
+		// Check Convex connection
+		const convexHealthy = await convexService.ping();
 
 		// Get system information
 		const systemInfo = {
@@ -37,15 +40,21 @@ health.get('/detailed', async (c) => {
 			memory: process.memoryUsage(),
 		};
 
+		const overallHealthy = monitoringHealthy && convexHealthy;
+
 		const response: ApiResponse = {
-			success: true,
+			success: overallHealthy,
 			data: {
-				status: 'healthy',
+				status: overallHealthy ? 'healthy' : 'degraded',
 				timestamp,
 				services: {
 					monitoring: {
 						status: monitoringHealthy ? 'healthy' : 'unhealthy',
 						isRunning: monitoringHealthy,
+					},
+					database: {
+						status: convexHealthy ? 'healthy' : 'unhealthy',
+						connected: convexHealthy,
 					},
 				},
 				system: systemInfo,
@@ -54,7 +63,7 @@ health.get('/detailed', async (c) => {
 			timestamp,
 		};
 
-		return c.json(response);
+		return c.json(response, overallHealthy ? 200 : 503);
 	} catch (error) {
 		console.error('Detailed health check error:', error);
 
@@ -72,7 +81,7 @@ health.get('/detailed', async (c) => {
 health.get('/ready', async (c) => {
 	try {
 		const dbHealthy = await convexService.ping();
-		const monitoringHealthy = monitoringService.isRunning();
+		const monitoringHealthy = monitoringService.getIsRunning();
 
 		if (dbHealthy && monitoringHealthy) {
 			return c.json({ status: 'ready' });

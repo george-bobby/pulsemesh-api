@@ -299,38 +299,52 @@ const AddProviderDialog = ({ children }: AddProviderDialogProps) => {
         throw new Error("Invalid URL format");
       }
 
-      // Test connection to the endpoint
+      // Test connection to the endpoint via our server proxy
+      // Note: Direct browser requests may fail due to CORS, but this gives immediate feedback
       const response = await fetch(customEndpoint, {
-        method: "GET",
-        mode: "no-cors", // This allows cross-origin requests but limits response access
+        method: "HEAD", // Use HEAD for lighter test
         cache: "no-cache",
+        signal: AbortSignal.timeout(10000), // 10 second timeout
       });
 
       const latency = Date.now() - startTime;
 
-      // Since we're using no-cors, we can only check if the request completed
-      setTestResult({
-        success: true,
-        message: `Connection successful! Server responded in ${latency}ms`,
-        latency,
-      });
+      // Check if the response is successful (2xx or 3xx)
+      if (response.ok || (response.status >= 200 && response.status < 400)) {
+        setTestResult({
+          success: true,
+          message: `Connection successful! Server responded with status ${response.status} in ${latency}ms`,
+          latency,
+        });
 
-      toast({
-        title: "Connection Test Successful",
-        description: `Server responded in ${latency}ms`,
-      });
+        toast({
+          title: "Connection Test Successful",
+          description: `Server responded with status ${response.status} in ${latency}ms`,
+        });
+      } else {
+        // 4xx or 5xx errors
+        throw new Error(`Server returned status ${response.status} ${response.statusText}`);
+      }
     } catch (error) {
-      const latency = Date.now() - Date.now();
+      const latency = Date.now() - startTime;
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      
+      // Check if it's a CORS error
+      const isCorsError = errorMessage.includes("CORS") || errorMessage.includes("Failed to fetch");
+      
       setTestResult({
         success: false,
-        message: `Connection failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        message: isCorsError 
+          ? `CORS error - URL may be invalid or unreachable. The server will test it properly after adding. (${latency}ms)`
+          : `Connection failed: ${errorMessage} (${latency}ms)`,
         latency,
       });
 
       toast({
         title: "Connection Test Failed",
-        description:
-          error instanceof Error ? error.message : "Unknown error occurred",
+        description: isCorsError
+          ? "CORS blocked - The server will verify the endpoint after you add it."
+          : errorMessage,
         variant: "destructive",
       });
     } finally {

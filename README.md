@@ -1,6 +1,6 @@
-# PulseMesh API - Isolated Client/Server Architecture
+# PulseMesh API
 
-A comprehensive API monitoring system with **completely isolated** client and server environments. The client is a modern React frontend, and the server is a robust Hono.js backend, both running independently with their own Convex database functions.
+A comprehensive API monitoring system with isolated client and server environments. The client is a modern React frontend, and the server is a robust Hono.js backend, both sharing the same Convex database for real-time synchronization.
 
 ## 🏗️ Architecture Overview
 
@@ -8,17 +8,43 @@ A comprehensive API monitoring system with **completely isolated** client and se
 pulsemesh-api/
 ├── client/                 # React Frontend (Port 8080)
 │   ├── src/               # React components and pages
-│   ├── convex/            # Client-side Convex functions
-│   ├── package.json       # Client dependencies
-│   └── README.md          # Client documentation
+│   │   ├── components/   # UI components
+│   │   ├── pages/         # Application pages
+│   │   ├── hooks/         # Custom React hooks
+│   │   ├── services/     # API services
+│   │   └── types/         # TypeScript definitions
+│   └── package.json       # Client dependencies
 │
-├── server/                # Hono.js Backend (Port 3001)
+├── server/                # Hono.js Backend (Port 3004)
 │   ├── src/               # Server routes and services
-│   ├── convex/            # Server-side Convex functions
-│   ├── package.json       # Server dependencies
-│   └── README.md          # Server documentation
+│   │   ├── config/        # Configuration
+│   │   ├── middleware/    # Custom middleware
+│   │   ├── routes/        # API route handlers
+│   │   ├── services/      # Business logic
+│   │   └── types/         # TypeScript definitions
+│   ├── convex/            # Convex database functions (shared)
+│   └── package.json       # Server dependencies
 │
-└── README.md              # This file
+└── README.md
+```
+
+### Single Convex Architecture
+
+Both client and server share the same Convex database deployment, ensuring data consistency and enabling real-time updates via Convex subscriptions.
+
+```
+┌─────────────────┐         ┌─────────────────┐
+│   React Client  │────────▶│   Convex DB     │
+│   (Port 8080)   │◀────────│  (Shared)       │
+└─────────────────┘         └─────────────────┘
+         │                           ▲
+         │ REST API                  │
+         │ (Auth Required)           │
+         ▼                           │
+┌─────────────────┐                  │
+│  Hono Server    │──────────────────┘
+│  (Port 3004)    │
+└─────────────────┘
 ```
 
 ## 🚀 Quick Start
@@ -30,221 +56,276 @@ pulsemesh-api/
 - Convex account and deployment
 - Clerk account and application
 
-### 1. Clone and Setup
+### Installation
 
-```bash
-git clone <your-repo-url>
-cd pulsemesh-api
-```
+1. **Clone the repository:**
 
-### 2. Install Dependencies
+   ```bash
+   git clone <your-repo-url>
+   cd pulsemesh-api
+   ```
 
-**Client:**
-```bash
-cd client
-npm install
-```
+2. **Install dependencies:**
 
-**Server:**
-```bash
-cd server
-npm install
-```
+   ```bash
+   # Client
+   cd client && npm install && cd ..
 
-### 3. Environment Configuration
+   # Server
+   cd server && npm install && cd ..
+   ```
 
-**Client Environment:**
-```bash
-cd client
-cp .env.example .env.local
-# Edit .env.local with your configuration
-```
+3. **Configure environment variables:**
 
-**Server Environment:**
-```bash
-cd server
-cp .env.example .env.local
-# Edit .env.local with your configuration
-```
+   **Client** - Create `client/.env.local`:
 
-### 4. Start Both Servers
+   ```bash
+   cd client
+   # Create .env.local file with the following variables:
+   ```
 
-**Terminal 1 - Server:**
-```bash
-cd server
-npm run dev
-```
-Server will start on `http://localhost:3004`
+   ```env
+   VITE_CONVEX_URL=https://your-deployment.convex.cloud
+   VITE_CLERK_PUBLISHABLE_KEY=pk_test_your-publishable-key
+   VITE_API_BASE_URL=http://localhost:3004
+   VITE_WS_URL=ws://localhost:3003/ws
+   ```
 
-**Terminal 2 - Client:**
-```bash
-cd client
-npm run dev
-```
-Client will start on `http://localhost:8080`
+   **Server** - Create `server/.env`:
 
-**Terminal 3 - Server Convex:**
-```bash
-cd server
-npm run convex:dev
-```
+   ```bash
+   cd server
+   # Create .env file with the following variables:
+   ```
 
-**Terminal 4 - Client Convex:**
-```bash
-cd client
-npm run convex:dev
-```
+   ```env
+   CONVEX_DEPLOYMENT=your-deployment-name
+   CONVEX_URL=https://your-deployment.convex.cloud
+   CLERK_SECRET_KEY=sk_test_your-secret-key
+   CLERK_JWT_ISSUER_DOMAIN=https://your-clerk-domain.clerk.accounts.dev
+   PORT=3004
+   NODE_ENV=development
+   MONITORING_INTERVAL=30000
+   MONITORING_TIMEOUT=10000
+   MAX_CONCURRENT_CHECKS=10
+   ```
 
-## 🔄 Isolated Environment Features
+   **Important**: Both must use the **same** `CONVEX_URL`:
 
-### ✅ Complete Independence
+   - Client: `VITE_CONVEX_URL=https://your-deployment.convex.cloud`
+   - Server: `CONVEX_URL=https://your-deployment.convex.cloud`
 
-- **Separate Codebases**: Client and server have completely separate source code
-- **Independent Dependencies**: Each has its own package.json and node_modules
-- **Isolated Databases**: Separate Convex functions for client and server operations
-- **Environment Isolation**: Separate .env files and configuration
-- **Independent Deployment**: Can be deployed to different servers/platforms
+4. **Start all services:**
 
-### ✅ API Communication
+   **Terminal 1 - Server:**
 
-- **HTTP API**: Client communicates with server via RESTful API
-- **WebSocket**: Real-time updates via WebSocket connection
-- **CORS Configured**: Server accepts requests from client origin
-- **Authentication**: Shared Clerk authentication via JWT tokens
+   ```bash
+   cd server
+   npm run dev
+   ```
 
-### ✅ Database Architecture
+   Server starts on `http://localhost:3004`
 
-**Client Convex Functions:**
-- User-facing operations with authentication
-- Frontend data queries and mutations
-- Real-time subscriptions for UI updates
+   **Terminal 2 - Client:**
 
-**Server Convex Functions:**
-- Internal operations without authentication requirements
-- Background monitoring and health checks
-- System-level data management
+   ```bash
+   cd client
+   npm run dev
+   ```
+
+   Client starts on `http://localhost:8080`
+
+   **Terminal 3 - Convex (Shared):**
+
+   ```bash
+   cd server
+   npm run convex:dev
+   ```
+
+   **Note**: Only the server has Convex functions. The client connects to the same Convex deployment via `VITE_CONVEX_URL`. Only one Convex dev process is needed.
 
 ## 📊 System Components
 
 ### Client (React Frontend)
 
 - **Port**: 8080
-- **Framework**: React 18 + TypeScript + Vite
-- **UI**: shadcn/ui + Tailwind CSS
-- **Authentication**: Clerk
-- **Database**: Convex (client functions)
-- **Real-time**: WebSocket client
-
-**Key Features:**
-- Real-time dashboard
-- API provider management
-- Analytics and charts
-- User authentication
-- Responsive design
+- **Tech Stack**: React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui
+- **Features**: Real-time dashboard, API provider management, analytics, authentication
+- **Database**: Convex (shared with server)
 
 ### Server (Hono.js Backend)
 
 - **Port**: 3004 (HTTP) + 3003 (WebSocket)
-- **Framework**: Hono.js + TypeScript
-- **Authentication**: Clerk JWT validation
-- **Database**: Convex (server functions)
-- **Monitoring**: Automated health checks
-
-**Key Features:**
-- RESTful API endpoints
-- WebSocket server for real-time updates
-- Automated API monitoring
-- Circuit breaker patterns
-- Background job scheduling
+- **Tech Stack**: Hono.js, TypeScript, Convex, Clerk
+- **Features**: RESTful API, WebSocket server, automated health checks, circuit breaker patterns
 
 ## 🌐 API Endpoints
 
-### Server API (http://localhost:3004)
+### Health Check
 
 - `GET /health` - Server health status
-- `GET /api/providers` - Get API providers
-- `POST /api/providers` - Create API provider
-- `PUT /api/providers/:id` - Update API provider
-- `DELETE /api/providers/:id` - Delete API provider
-- `GET /api/monitoring/providers/:id/history` - Health check history
+- `GET /health/detailed` - Detailed health with service status
 
-### WebSocket (ws://localhost:3003/ws)
+### Providers (Require Auth)
 
-- Real-time status updates
-- Health check results
-- Provider status changes
+- `GET /api/providers` - Get all providers for authenticated user
+- `POST /api/providers` - Create new API provider
+- `GET /api/providers/:id` - Get specific provider
+- `PUT /api/providers/:id` - Update provider
+- `DELETE /api/providers/:id` - Delete provider
 
-## 🔐 Authentication Flow
+### Monitoring (Require Auth)
 
-1. **User Authentication**: Clerk handles user sign-in/sign-up
-2. **JWT Tokens**: Client receives JWT token from Clerk
-3. **API Requests**: Client sends JWT token in Authorization header
-4. **Server Validation**: Server validates JWT token with Clerk
-5. **Database Access**: Authenticated requests access Convex database
+- `GET /api/monitoring/providers/:id/history` - Get health check history
+- `GET /api/monitoring/providers/:id/stats` - Get provider statistics
+- `POST /api/monitoring/providers/:id/check` - Trigger manual health check
+- `GET /api/monitoring/providers/:id/circuit-breaker` - Get circuit breaker status
 
-## 🚀 Deployment
+### WebSocket
 
-### Client Deployment
+- `ws://localhost:3003/ws` - Real-time status updates
+
+## 🔐 Authentication
+
+The application uses Clerk for authentication:
+
+1. User signs in via Clerk in the React client
+2. Client receives JWT token from Clerk
+3. Client sends JWT token in `Authorization: Bearer <token>` header for API requests
+4. Server validates JWT token with Clerk
+5. Authenticated requests access Convex database
+
+**Setup:**
+
+1. Create a Clerk application at [Clerk Dashboard](https://dashboard.clerk.dev/)
+2. Configure JWT template named "convex" in Clerk Dashboard
+3. Add Clerk keys to environment variables:
+   - Client: `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_JWT_ISSUER_DOMAIN`
+   - Server: `CLERK_SECRET_KEY`, `CLERK_JWT_ISSUER_DOMAIN`
+
+## 🔄 Real-Time Updates
+
+PulseMesh uses **Convex subscriptions** for automatic real-time updates:
+
+1. Server writes health check results to Convex
+2. Convex automatically notifies all subscribed clients
+3. Client React components re-render with new data via `useQuery` hooks
+
+**Benefits:**
+
+- ✅ Automatic real-time updates (no manual polling)
+- ✅ Efficient (only updates when data changes)
+- ✅ Built-in caching and optimization
+
+**Verification:**
+
+- Create a provider → UI updates without refresh
+- Health check completes → Provider status updates automatically
+- No polling requests visible in browser network tab
+
+## 🧪 Testing
+
+### Quick Test
+
+1. Start all services (see Quick Start)
+2. Open `http://localhost:8080` and sign in
+3. Add a provider:
+   - Name: `HTTPBin Test`
+   - Type: `Monitoring`
+   - Endpoint: `https://httpbin.org/status/200`
+4. Verify provider appears immediately
+5. Wait 30 seconds for automatic health check
+6. Verify status updates automatically (no refresh needed)
+
+### API Testing
+
+Get JWT token from browser DevTools → Application → Local Storage → Clerk session:
 
 ```bash
-cd client
-npm run build
-# Deploy dist/ folder to Vercel, Netlify, etc.
+# Create provider
+curl -X POST http://localhost:3004/api/providers \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "name": "Test API",
+    "type": "monitoring",
+    "endpoint": "https://httpbin.org/status/200",
+    "isHealthy": true,
+    "latency": 0,
+    "errorRate": 0,
+    "priority": 1
+  }'
+
+# Trigger health check
+curl -X POST http://localhost:3004/api/monitoring/providers/PROVIDER_ID/check \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-### Server Deployment
+### Test Checklist
 
-```bash
-cd server
-npm run build
-npm start
-# Deploy to Railway, Render, AWS, etc.
-```
+**Setup:**
 
-### Environment Variables
+- [ ] Convex account created and deployment active
+- [ ] Clerk account created and application configured
+- [ ] Environment variables configured in both client and server
+- [ ] Both use same `CONVEX_URL`
 
-**Client Production:**
-```env
-VITE_CONVEX_URL=https://your-production-deployment.convex.cloud
-VITE_CLERK_PUBLISHABLE_KEY=pk_live_your-live-key
-VITE_API_BASE_URL=https://your-server-domain.com
-VITE_WS_URL=wss://your-server-domain.com/ws
-```
+**Functionality:**
 
-**Server Production:**
-```env
-CONVEX_URL=https://your-production-deployment.convex.cloud
-CLERK_SECRET_KEY=sk_live_your-live-secret
-PORT=3001
-WS_PORT=3002
-NODE_ENV=production
-```
+- [ ] User can sign in with Clerk
+- [ ] User can create/update/delete providers
+- [ ] Providers appear in UI immediately (real-time)
+- [ ] Health checks run automatically (every 30 seconds)
+- [ ] Provider status updates automatically
+- [ ] API endpoints require authentication
+- [ ] Users can only access their own providers
 
-## 📚 Documentation
+**Troubleshooting:**
 
-- **[Client Documentation](client/README.md)** - React frontend setup and usage
-- **[Server Documentation](server/README.md)** - Hono.js backend setup and API reference
-- **[Setup Verification](test-setup.md)** - Testing the isolated environment
+- Verify `CONVEX_URL` is correct and deployment is active
+- Verify Clerk keys are correct
+- Check ports 3004 and 8080 are available
+- Check server logs for errors
+- Check browser console for client-side errors
 
-## 🔧 Development Workflow
+### Database Schema
 
-### Adding New Features
+The Convex schema (defined in `server/convex/schema.ts`) includes:
 
-**Client-side Features:**
+- `apiProviders` - API provider configurations
+- `healthChecks` - Health check history
+- `userProfiles` - User account data
+- `messages` - System messages
+- `circuitBreakerMetrics` - Circuit breaker state tracking
+- `retryMetrics` - Retry attempt tracking
+- `failoverEvents` - Failover event history
+- `selfHealingActions` - Self-healing action log
+- `anomalyDetection` - Anomaly detection records
+
+### Adding Features
+
+**Client-side:**
+
 1. Work in `client/` directory
 2. Add React components, pages, hooks
-3. Update client Convex functions if needed
-4. Test with `npm run dev` in client directory
+3. Client connects to Convex via `VITE_CONVEX_URL` (no local Convex functions)
+4. Test with `npm run dev`
 
-**Server-side Features:**
+**Server-side:**
+
 1. Work in `server/` directory
 2. Add routes, services, middleware
 3. Update server Convex functions if needed
-4. Test with `npm run dev` in server directory
-
-### Database Changes
+4. Test with `npm run dev`
 
 **Schema Updates:**
-1. Update `client/convex/schema.ts` for client functions
-2. Update `server/convex/schema.ts` for server functions
-3. Deploy with `npm run convex:deploy` in respective directories
+
+1. Update `server/convex/schema.ts` (schema is shared via server's Convex deployment)
+2. Deploy with `npm run convex:deploy` from server directory
+
+## 📚 Additional Resources
+
+- [Convex Documentation](https://docs.convex.dev/)
+- [Clerk Documentation](https://docs.clerk.dev/)
+- [Hono.js Documentation](https://hono.dev/)
+- [React Documentation](https://react.dev/)

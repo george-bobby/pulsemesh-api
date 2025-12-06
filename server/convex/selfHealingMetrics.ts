@@ -330,8 +330,8 @@ export const getSelfHealingStats = query({
       successfulFailovers: failovers.filter(f => f.success).length,
       totalAnomalies: anomalies.length,
       resolvedAnomalies: anomalies.filter(a => a.resolved).length,
-      averageRecoveryTime: this.calculateAverageRecoveryTime(actions),
-      topFailureReasons: this.getTopFailureReasons(actions),
+      averageRecoveryTime: calculateAverageRecoveryTime(actions),
+      topFailureReasons: getTopFailureReasons(actions),
     };
   },
 });

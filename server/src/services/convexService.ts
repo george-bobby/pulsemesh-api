@@ -48,19 +48,25 @@ export class ConvexService {
 		}
 	}
 
-	async getApiProvidersByUser(
-		userId: string,
-		token?: string
-	): Promise<ApiProvider[]> {
+	async getApiProvidersByUser(userId: string): Promise<ApiProvider[]> {
 		try {
-			const client = token ? this.getAuthenticatedClient(token) : this.client;
-			const result = await client.query(api.apiProviders.getByUser, {
+			const result = await this.client.query(api.apiProviders.getByUser, {
 				userId,
 			});
 			return result || [];
 		} catch (error: any) {
+			const errorMessage = error?.message || String(error);
+			if (
+				errorMessage.includes('fetch failed') ||
+				errorMessage.includes('ECONNREFUSED')
+			) {
+				console.error(
+					'❌ Convex connection failed. Make sure "npm run convex:dev" is running in the server folder.'
+				);
+				return [];
+			}
 			throw new ApiError(
-				`Failed to get API providers for user: ${error?.message || String(error)}`,
+				`Failed to get API providers for user: ${errorMessage}`,
 				500
 			);
 		}
@@ -73,8 +79,18 @@ export class ConvexService {
 			);
 			return result || [];
 		} catch (error: any) {
+			const errorMessage = error?.message || String(error);
+			if (
+				errorMessage.includes('fetch failed') ||
+				errorMessage.includes('ECONNREFUSED')
+			) {
+				console.error(
+					'❌ Convex connection failed. Make sure "npm run convex:dev" is running in the server folder.'
+				);
+				return []; // Return empty array instead of throwing to prevent service crash
+			}
 			throw new ApiError(
-				`Failed to get all API providers: ${error?.message || String(error)}`,
+				`Failed to get all API providers: ${errorMessage}`,
 				500
 			);
 		}
@@ -325,7 +341,17 @@ export class ConvexService {
 			// Use a simple query that should exist to test connectivity
 			await this.client.query(api.apiProviders.getAll);
 			return true;
-		} catch (error) {
+		} catch (error: any) {
+			const errorMessage = error?.message || String(error);
+			if (
+				errorMessage.includes('fetch failed') ||
+				errorMessage.includes('ECONNREFUSED') ||
+				errorMessage.includes('CONVEX_URL')
+			) {
+				console.error(
+					'❌ Convex connection failed. Check CONVEX_URL environment variable.'
+				);
+			}
 			return false;
 		}
 	}

@@ -75,13 +75,21 @@ export class MonitoringService {
 
 	private async performHealthChecks(): Promise<void> {
 		try {
-			const providers = await convexService.getAllApiProviders();
-
-			if (providers.length === 0) {
+			// Verify Convex connection before proceeding
+			const isConnected = await convexService.ping();
+			if (!isConnected) {
+				console.error('❌ Convex connection failed. Skipping health checks.');
 				return;
 			}
 
-			console.log(`Performing health checks for ${providers.length} providers`);
+			const providers = await convexService.getAllApiProviders();
+
+			if (providers.length === 0) {
+				console.log('No providers to monitor');
+				return;
+			}
+
+			console.log(`✅ Performing health checks for ${providers.length} providers`);
 
 			// Step 1: Detect anomalies before health checks
 			try {
@@ -102,13 +110,32 @@ export class MonitoringService {
 			// Step 2: Perform health checks with self-healing
 			const chunks = this.chunkArray(providers, env.MAX_CONCURRENT_CHECKS);
 
+			let successCount = 0;
+			let failureCount = 0;
+
 			for (const chunk of chunks) {
-				await Promise.all(
+				const results = await Promise.allSettled(
 					chunk.map((provider) =>
 						this.checkProviderHealthWithSelfHealing(provider)
 					)
 				);
+
+				results.forEach((result, index) => {
+					if (result.status === 'fulfilled') {
+						successCount++;
+					} else {
+						failureCount++;
+						console.error(
+							`❌ Health check failed for provider ${chunk[index].name}:`,
+							result.reason
+						);
+					}
+				});
 			}
+
+			console.log(
+				`✅ Health checks completed: ${successCount} succeeded, ${failureCount} failed`
+			);
 
 			// Step 3: Get self-healing stats and broadcast to clients
 			try {
@@ -197,7 +224,25 @@ export class MonitoringService {
 		startTime: number
 	): Promise<HealthCheckResult> {
 		try {
-			// First, try a basic connectivity test
+			// Validate URL format first
+			try {
+				const url = new URL(provider.endpoint);
+				if (!url.protocol.startsWith('http')) {
+					throw new Error('URL must use HTTP or HTTPS protocol');
+				}
+			} catch (urlError) {
+				const endTime = Date.now();
+				return {
+					providerId: provider._id!,
+					timestamp: endTime,
+					isHealthy: false,
+					latency: endTime - startTime,
+					responseTime: endTime - startTime,
+					errorMessage: 'Invalid URL format',
+				};
+			}
+
+			// Perform connectivity test
 			const controller = new AbortController();
 			const timeoutId = setTimeout(
 				() => controller.abort(),
@@ -206,7 +251,7 @@ export class MonitoringService {
 
 			const response: AxiosResponse = await axios.get(provider.endpoint, {
 				timeout: env.MONITORING_TIMEOUT,
-				validateStatus: (status) => status < 500, // Consider 4xx as healthy but 5xx as unhealthy
+				validateStatus: () => true, // Accept all status codes to handle them manually
 				signal: controller.signal,
 				headers: {
 					'User-Agent': 'PulseMesh-Monitor/1.0',
@@ -218,17 +263,21 @@ export class MonitoringService {
 			const endTime = Date.now();
 			const responseTime = endTime - startTime;
 
-			// Consider 2xx and 3xx as healthy, 4xx as degraded, 5xx as down
-			let isHealthy = true;
-			if (response.status >= 500) {
-				isHealthy = false;
-			} else if (response.status >= 400) {
-				// 4xx could still be considered "healthy" if the endpoint is responding
-				isHealthy = true; // The API is responding, just might need authentication
+			// Only 2xx and 3xx status codes are considered healthy
+			// 4xx (client errors like 404, 401) and 5xx (server errors) are unhealthy
+			const isHealthy = response.status >= 200 && response.status < 400;
+			let errorMessage: string | undefined;
+
+			if (!isHealthy) {
+				if (response.status >= 400 && response.status < 500) {
+					errorMessage = `Client error: ${response.status} ${response.statusText}`;
+				} else if (response.status >= 500) {
+					errorMessage = `Server error: ${response.status} ${response.statusText}`;
+				}
 			}
 
 			console.log(
-				`Health check for ${provider.name}: ${response.status} in ${responseTime}ms`
+				`Health check for ${provider.name}: ${response.status} in ${responseTime}ms - ${isHealthy ? 'healthy' : 'unhealthy'}`
 			);
 
 			return {
@@ -238,6 +287,7 @@ export class MonitoringService {
 				latency: responseTime,
 				statusCode: response.status,
 				responseTime,
+				errorMessage,
 			};
 		} catch (error) {
 			const endTime = Date.now();

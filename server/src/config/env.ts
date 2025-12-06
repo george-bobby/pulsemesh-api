@@ -13,7 +13,7 @@ config({ path: join(__dirname, '../../.env') });
 // Environment validation schema
 const envSchema = z.object({
 	// Server Configuration
-	PORT: z.string().default('3001').transform(Number),
+	PORT: z.string().default('3004').transform(Number),
 	NODE_ENV: z
 		.enum(['development', 'production', 'test'])
 		.default('development'),
