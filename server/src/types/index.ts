@@ -26,6 +26,7 @@ export const HealthCheckResultSchema = z.object({
   statusCode: z.number().optional(),
   errorMessage: z.string().optional(),
   responseTime: z.number(),
+  status: z.enum(['healthy', 'degraded', 'down']).optional(),
 });
 
 export type HealthCheckResult = z.infer<typeof HealthCheckResultSchema>;

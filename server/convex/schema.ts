@@ -31,6 +31,7 @@ export default defineSchema({
 		statusCode: v.optional(v.number()),
 		errorMessage: v.optional(v.string()),
 		responseTime: v.number(),
+		status: v.optional(v.union(v.literal('healthy'), v.literal('degraded'), v.literal('down'))),
 	})
 		.index('by_provider', ['providerId'])
 		.index('by_timestamp', ['timestamp']),

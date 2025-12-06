@@ -16,12 +16,22 @@ export const authMiddleware = createMiddleware(async (c, next) => {
     // Get the authorization header
     const authHeader = c.req.header('Authorization');
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new ApiError('Missing or invalid authorization header', 401);
+    // Also check query parameter for token (needed for EventSource/SSE which doesn't support custom headers)
+    const queryToken = c.req.query('token');
+    
+    let token: string | undefined;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      // Extract the token from header
+      token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    } else if (queryToken) {
+      // Extract the token from query parameter
+      token = queryToken;
     }
-
-    // Extract the token
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    
+    if (!token) {
+      throw new ApiError('Missing or invalid authorization header or token', 401);
+    }
 
     // Verify the token with Clerk
     const payload = await verifyToken(token, {

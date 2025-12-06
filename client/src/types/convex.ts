@@ -54,6 +54,7 @@ export interface HealthCheckResult {
   statusCode?: number;
   errorMessage?: string;
   responseTime: number;
+  status?: 'healthy' | 'degraded' | 'down';
 }
 
 // User Stats types
@@ -97,6 +98,8 @@ export const api = {
   healthChecks: {
     create: "healthChecks:create" as const,
     getHistory: "healthChecks:getHistory" as const,
+    getLatest: "healthChecks:getLatest" as const,
+    getLatestForAllProviders: "healthChecks:getLatestForAllProviders" as const,
     getRecentChecks: "healthChecks:getRecentChecks" as const,
     getStats: "healthChecks:getStats" as const,
     cleanup: "healthChecks:cleanup" as const,

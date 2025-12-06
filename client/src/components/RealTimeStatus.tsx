@@ -57,6 +57,7 @@ const RealTimeStatus = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [activeRecoveries, setActiveRecoveries] = useState<Map<string, SelfHealingEvent>>(new Map());
   const { user } = useUser();
+  const { getToken } = useAuth();
   const { toast } = useToast();
 
   const handleSelfHealingEvent = (event: SelfHealingEvent) => {
@@ -109,10 +110,19 @@ const RealTimeStatus = () => {
       if (isCleanedUp) return;
 
       try {
-        // No auth required - public API
+        // Get auth token for SSE connection (EventSource doesn't support custom headers)
+        const token = await getToken();
+
+        if (!token) {
+          console.error("❌ No auth token available for SSE connection");
+          setIsConnected(false);
+          return;
+        }
+
         const backendUrl =
           import.meta.env.VITE_API_BASE_URL || "http://localhost:3004";
-        const streamUrl = `${backendUrl}/api/monitoring/stream/${user.id}`;
+        // Pass token as query parameter since EventSource doesn't support custom headers
+        const streamUrl = `${backendUrl}/api/monitoring/stream/${user.id}?token=${encodeURIComponent(token)}`;
 
         console.log("🔌 Attempting to connect to real-time monitoring:", streamUrl);
 
@@ -198,7 +208,7 @@ const RealTimeStatus = () => {
         setEventSource(null);
       }
     };
-  }, [user?.id, toast]);
+  }, [user?.id, getToken, toast]);
 
   // Don't render if we don't have a user or if the feature is disabled
   if (!user?.id) return null;

@@ -11,6 +11,7 @@ export const create = mutation({
     statusCode: v.optional(v.number()),
     errorMessage: v.optional(v.string()),
     responseTime: v.number(),
+    status: v.optional(v.union(v.literal('healthy'), v.literal('degraded'), v.literal('down'))),
   },
   handler: async (ctx, args) => {
     // Server can create health checks without authentication
@@ -22,6 +23,7 @@ export const create = mutation({
       statusCode: args.statusCode,
       errorMessage: args.errorMessage,
       responseTime: args.responseTime,
+      status: args.status,
     });
   },
 });
@@ -40,6 +42,44 @@ export const getHistory = query({
       .filter((q) => q.eq(q.field("providerId"), args.providerId))
       .order("desc")
       .take(limit);
+  },
+});
+
+// Get the latest health check for a specific provider
+export const getLatest = query({
+  args: { 
+    providerId: v.id("apiProviders"),
+  },
+  handler: async (ctx, args) => {
+    const checks = await ctx.db
+      .query("healthChecks")
+      .filter((q) => q.eq(q.field("providerId"), args.providerId))
+      .order("desc")
+      .take(1);
+    
+    return checks.length > 0 ? checks[0] : null;
+  },
+});
+
+// Get the latest health checks for all providers (grouped by provider)
+export const getLatestForAllProviders = query({
+  args: {},
+  handler: async (ctx) => {
+    // Get all health checks ordered by timestamp desc
+    const allChecks = await ctx.db
+      .query("healthChecks")
+      .order("desc")
+      .collect();
+    
+    // Group by providerId and keep only the latest for each
+    const latestByProvider = new Map();
+    for (const check of allChecks) {
+      if (!latestByProvider.has(check.providerId)) {
+        latestByProvider.set(check.providerId, check);
+      }
+    }
+    
+    return Array.from(latestByProvider.values());
   },
 });
 

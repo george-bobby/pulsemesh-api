@@ -64,6 +64,10 @@ const ProviderStatus = ({ providers = [] }: ProviderStatusProps) => {
   const getProviderStatus = (
     provider: ProviderWithMetrics
   ): "healthy" | "degraded" | "down" => {
+    // Use status from latest health check if available
+    if (provider.status) return provider.status;
+    
+    // Fallback to legacy logic
     if (!provider.isHealthy) return "down";
     if (provider.errorRate > 5 || provider.latency > 500) return "degraded";
     return "healthy";

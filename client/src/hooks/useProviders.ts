@@ -9,6 +9,7 @@ export interface ProviderWithMetrics extends ApiProvider {
   avgResponseTime?: number;
   totalRequests?: number;
   successRate?: number;
+  status?: 'healthy' | 'degraded' | 'down';
 }
 
 export const useProviders = () => {
@@ -24,6 +25,8 @@ export const useProviders = () => {
     user?.id ? { userId: user.id } : "skip"
   );
   
+  const latestHealthChecks = useQuery(api.healthChecks.getLatestForAllProviders);
+  
   const createProviderMutation = useMutation(api.apiProviders.create);
   const updateProviderMutation = useMutation(api.apiProviders.update);
   const deleteProviderMutation = useMutation(api.apiProviders.deleteProvider);
@@ -36,24 +39,55 @@ export const useProviders = () => {
       setLoading(true);
       setError(null);
 
+      // Create a map of latest health checks by provider ID
+      const healthCheckMap = new Map();
+      if (latestHealthChecks) {
+        latestHealthChecks.forEach(check => {
+          healthCheckMap.set(check.providerId, check);
+        });
+      }
+
       // Use Convex data as primary source
-      const providersWithMetrics: ProviderWithMetrics[] = convexProviders.map(provider => ({
-        _id: provider._id,
-        name: provider.name,
-        type: provider.type,
-        endpoint: provider.endpoint,
-        isHealthy: provider.isHealthy,
-        latency: provider.latency,
-        errorRate: provider.errorRate,
-        priority: provider.priority,
-        isPrimary: provider.isPrimary,
-        lastCheck: provider.lastCheck,
-        userId: provider.userId,
-        // Calculate derived metrics
-        uptime: Math.max(85, 100 - provider.errorRate),
-        avgResponseTime: provider.latency,
-        successRate: Math.max(0, 100 - provider.errorRate),
-      }));
+      const providersWithMetrics: ProviderWithMetrics[] = convexProviders.map(provider => {
+        const latestCheck = healthCheckMap.get(provider._id);
+        
+        // Determine status: prioritize health check status, then use intelligent fallback
+        let status: 'healthy' | 'degraded' | 'down' = 'healthy';
+        if (latestCheck?.status) {
+          // Use status from latest health check if available
+          status = latestCheck.status;
+        } else if (provider.isHealthy) {
+          status = 'healthy';
+        } else {
+          // If unhealthy but we have a statusCode, it means endpoint was reachable (degraded)
+          // If no statusCode, it means network error (down)
+          if (latestCheck?.statusCode !== undefined) {
+            status = 'degraded'; // Endpoint reachable but returning errors
+          } else {
+            status = 'down'; // Network error, completely unreachable
+          }
+        }
+        
+        return {
+          _id: provider._id,
+          name: provider.name,
+          type: provider.type,
+          endpoint: provider.endpoint,
+          isHealthy: provider.isHealthy,
+          latency: provider.latency,
+          errorRate: provider.errorRate,
+          priority: provider.priority,
+          isPrimary: provider.isPrimary,
+          lastCheck: provider.lastCheck,
+          userId: provider.userId,
+          // Calculate derived metrics
+          uptime: Math.max(85, 100 - provider.errorRate),
+          avgResponseTime: provider.latency,
+          successRate: Math.max(0, 100 - provider.errorRate),
+          // Add status from latest health check
+          status,
+        };
+      });
 
       setProviders(providersWithMetrics);
     } catch (err) {
@@ -62,7 +96,7 @@ export const useProviders = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, convexProviders]);
+  }, [user?.id, convexProviders, latestHealthChecks]);
 
   // Refresh data from Convex
   // With Single Convex Architecture, Convex subscriptions provide real-time updates

@@ -377,13 +377,26 @@ export class SelfHealingService extends EventEmitter {
       const deviation = Math.abs(current.averageLatency - baseline.averageLatency) / baseline.averageLatency;
       const confidence = Math.min(1, deviation);
       
+      // Clean baseline and current to only include the fields expected by the schema
+      const cleanBaseline = {
+        averageLatency: baseline.averageLatency,
+        errorRate: baseline.errorRate,
+        availability: baseline.availability
+      };
+      
+      const cleanCurrent = {
+        averageLatency: current.averageLatency,
+        errorRate: current.errorRate,
+        availability: current.availability
+      };
+      
       await convexService.client.mutation('selfHealingMetrics:createAnomalyDetection', {
         providerId,
         anomalyType,
         severity: deviation > 0.5 ? 'HIGH' : 'MEDIUM',
         confidence,
-        baseline,
-        current,
+        baseline: cleanBaseline,
+        current: cleanCurrent,
         deviation
       });
     } catch (error) {

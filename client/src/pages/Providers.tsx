@@ -23,28 +23,43 @@ import {
 } from "lucide-react";
 
 // --- Utility Functions (moved outside component to be accessible by modals) ---
-const getStatusIcon = (isHealthy: boolean) => {
-  if (isHealthy) {
-    return <CheckCircle className="w-4 h-4 text-success" />;
-  } else {
-    return <AlertTriangle className="w-4 h-4 text-error" />;
+const getStatusIcon = (status?: 'healthy' | 'degraded' | 'down') => {
+  switch (status) {
+    case 'healthy':
+      return <CheckCircle className="w-4 h-4 text-success" />;
+    case 'degraded':
+      return <AlertTriangle className="w-4 h-4 text-warning" />;
+    case 'down':
+      return <AlertTriangle className="w-4 h-4 text-error" />;
+    default:
+      return <AlertTriangle className="w-4 h-4 text-error" />;
   }
 };
 
-const getStatusBadge = (isHealthy: boolean, errorRate: number) => {
-  if (isHealthy && errorRate < 1) {
-    return <Badge className="bg-success text-success-foreground">Healthy</Badge>;
-  } else if (isHealthy && errorRate < 5) {
-    return <Badge className="bg-warning text-warning-foreground">Degraded</Badge>;
-  } else {
-    return <Badge className="bg-error text-error-foreground">Down</Badge>;
+const getStatusBadge = (status?: 'healthy' | 'degraded' | 'down') => {
+  switch (status) {
+    case 'healthy':
+      return <Badge className="bg-success text-success-foreground">Healthy</Badge>;
+    case 'degraded':
+      return <Badge className="bg-warning text-warning-foreground">Degraded</Badge>;
+    case 'down':
+      return <Badge className="bg-error text-error-foreground">Down</Badge>;
+    default:
+      return <Badge className="bg-error text-error-foreground">Down</Badge>;
   }
 };
 
-const getUptimeColor = (isHealthy: boolean, errorRate: number) => {
-  if (isHealthy && errorRate < 1) return "text-success";
-  if (isHealthy && errorRate < 5) return "text-warning";
-  return "text-error";
+const getUptimeColor = (status?: 'healthy' | 'degraded' | 'down') => {
+  switch (status) {
+    case 'healthy':
+      return "text-success";
+    case 'degraded':
+      return "text-warning";
+    case 'down':
+      return "text-error";
+    default:
+      return "text-error";
+  }
 };
 
 const calculateUptime = (errorRate: number) => {
@@ -149,13 +164,14 @@ const Providers = () => {
 
             <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
               {providers.map((provider) => {
-                const status = provider.isHealthy ? (provider.errorRate > 5 ? "degraded" : "healthy") : "down";
+                // Use status from provider data (set by useProviders hook)
+                const status = provider.status || (provider.isHealthy ? 'healthy' : 'down');
                 return (
                   <Card key={provider._id} className="p-4 border border-border hover:border-primary/50 transition-colors">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
-                          {getStatusIcon(provider.isHealthy)}
+                          {getStatusIcon(status)}
                           <div>
                             <div className="flex items-center gap-2">
                               <h3 className="font-semibold text-foreground">{provider.name}</h3>
@@ -178,7 +194,7 @@ const Providers = () => {
                       </div>
 
                       <div className="flex items-center gap-3">
-                        {getStatusBadge(provider.isHealthy, provider.errorRate)}
+                        {getStatusBadge(status)}
                         <Button variant="ghost" size="sm">
                           <TrendingUp className="w-4 h-4" />
                         </Button>
@@ -194,7 +210,7 @@ const Providers = () => {
                       </div>
                       <div>
                         <p className="text-muted-foreground mb-1">Uptime (24h)</p>
-                        <p className={`font-semibold ${getUptimeColor(provider.isHealthy, provider.errorRate)}`}>
+                        <p className={`font-semibold ${getUptimeColor(status)}`}>
                           {provider.uptime?.toFixed(1) || calculateUptime(provider.errorRate)}%
                         </p>
                       </div>
@@ -442,7 +458,7 @@ const DemoManageModal = () => {
               <Card key={provider._id} className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    {getStatusIcon(provider.isHealthy)}
+                    {getStatusIcon(provider.status || (provider.isHealthy ? 'healthy' : 'down'))}
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-semibold">{provider.name}</span>
